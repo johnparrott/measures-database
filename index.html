@@ -2514,52 +2514,30 @@ window.MEASURES = [
   }
 
   function forceMeaningDemoResults() {
-    const allRows = [...document.querySelectorAll(".result")];
-    const meaningRows = allRows.filter(row =>
-      norm(row.dataset.construct) === "meaning in life"
-    );
+    // Demo-only: clear the applied filters, commit the corrected query,
+    // and let the site's own renderer produce the full result set.
+    try {
+      Object.keys(facetState).forEach(key => {
+        facetState[key] = "Any";
+      });
+      selectedAgeStages.clear();
 
-    if (!meaningRows.length) return;
+      appliedFacetState = { ...facetState };
+      appliedAgeStages = new Set();
 
-    // Hide every result, then reveal the three genuine "Meaning in life"
-    // measures already present in the site's dataset.
-    allRows.forEach(row => { row.style.display = "none"; });
+      search.value = "meaning";
+      committedQuery = "meaning";
+      committedEffectiveQuery = "meaning";
+      committedCorrection = null;
 
-    const preferredOrder = [
-      "meaning in life questionnaire",
-      "purpose in life test",
-      "personal meaning profile"
-    ];
-
-    const ordered = preferredOrder
-      .map(name => meaningRows.find(row =>
-        norm(row.querySelector(".measure-title")?.textContent).includes(name)
-      ))
-      .filter(Boolean);
-
-    const remaining = meaningRows.filter(row => !ordered.includes(row));
-    const finalRows = [...ordered, ...remaining].slice(0, 3);
-
-    const mount = document.querySelector(".results");
-    const loadMoreWrap = document.querySelector(".load-more-wrap");
-
-    finalRows.forEach(row => {
-      row.style.display = "grid";
-      if (mount && loadMoreWrap) mount.insertBefore(row, loadMoreWrap);
-    });
-
-    if (loadMoreWrap) loadMoreWrap.classList.remove("on");
-
-    const count = document.querySelector(".result-count");
-    if (count) {
-      count.innerHTML = `${finalRows.length} results for <strong>“meaning”</strong>`;
+      visibleLimit = PAGE_SIZE;
+      renderFacetSections();
+      updateFilterCount();
+      apply();
+      updateSearchSummary();
+    } catch (err) {
+      console.warn("[Measures autoplay demo] Could not reset search state", err);
     }
-
-    const status = document.querySelector(".result-status");
-    if (status) status.classList.add("on");
-
-    const empty = document.querySelector(".empty");
-    if (empty) empty.style.display = "none";
   }
 
   async function scrollDetail() {
@@ -2673,7 +2651,7 @@ window.MEASURES = [
     // Demo-only: reveal the three real Meaning in life measures together,
     // regardless of the active filter combination.
     forceMeaningDemoResults();
-    await sleep(350);
+    await sleep(900);
 
     if (!mlq) {
       search.focus();
