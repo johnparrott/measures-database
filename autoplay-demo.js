@@ -127,7 +127,7 @@
     }) || null;
   }
 
-  function chip(sectionTitle, labels) {
+  function chip(sectionTitle, labels, { allowFallback = false } = {}) {
     const section = facetSection(sectionTitle);
     if (!section) return null;
     const choices = [...section.querySelectorAll(".facet-chip,.age-chip")]
@@ -137,10 +137,32 @@
       const wanted = norm(label);
       const exact = choices.find(el => norm(el.textContent) === wanted);
       if (exact) return exact;
+
+      const starts = choices.find(el => norm(el.textContent).startsWith(wanted));
+      if (starts) return starts;
+
       const contains = choices.find(el => norm(el.textContent).includes(wanted));
       if (contains) return contains;
     }
-    return choices[0] || null;
+
+    return allowFallback ? (choices[0] || null) : null;
+  }
+
+  async function scrollDrawerTo(el) {
+    const drawer = document.querySelector(".drawer");
+    if (!drawer || !el) return;
+
+    const targetTop = Math.max(
+      0,
+      el.offsetTop - drawer.clientHeight + el.offsetHeight + 28
+    );
+
+    drawer.scrollTo({
+      top: targetTop,
+      behavior: "smooth"
+    });
+
+    await sleep(950);
   }
 
   async function typeHuman(input, text) {
@@ -227,7 +249,7 @@
     await click(filterButton, 760);
 
     const filters = [
-      chip("Population", ["Adults", "Adult"]),
+      chip("Population", ["Adult", "Adults"]),
       chip("Length", ["Under 15", "Short", "Brief"]),
       chip("Language", ["English"])
     ].filter(Boolean);
@@ -240,11 +262,11 @@
       document.getElementById("applyFilters") ||
       byText(".filter-footer button,button", ["Apply filters", "Apply"]);
 
-    // Apply the selected filters without an extra visible cursor gesture.
-    // This keeps the demonstration focused on toggling the filters themselves.
+    // Scroll the real filter drawer so the Apply button is visibly revealed,
+    // then click it with the fake cursor.
     if (apply) {
-      apply.click();
-      await sleep(900);
+      await scrollDrawerTo(apply);
+      await click(apply, 900);
     }
 
     const search =
