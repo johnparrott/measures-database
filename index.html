@@ -2518,35 +2518,31 @@ window.MEASURES = [
     if (!detail) return;
 
     detail.scrollTop = 0;
-    await sleep(1200);
+    await sleep(1100);
 
     const max = Math.max(0, detail.scrollHeight - detail.clientHeight);
+    const duration = Math.max(18000, max * 5.2);
+    const start = performance.now();
 
-    // Use a steady, slower scroll instead of ease-in/ease-out so the middle
-    // of the page does not rush past.
-    const stops = [0.22, 0.46, 0.70, 1];
-    let from = 0;
+    await new Promise(resolve => {
+      function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
 
-    for (const stop of stops) {
-      const startTop = max * from;
-      const endTop = max * stop;
-      const distance = endTop - startTop;
-      const duration = Math.max(2600, distance * 5.6);
-      const start = performance.now();
+        // Continuous movement with only subtle speed changes.
+        // This avoids both the fast middle and any full stops.
+        const eased = t
+          - 0.018 * Math.sin(Math.PI * 2 * t)
+          - 0.008 * Math.sin(Math.PI * 6 * t);
 
-      await new Promise(resolve => {
-        function tick(now) {
-          const t = Math.min(1, (now - start) / duration);
-          detail.scrollTop = startTop + distance * t;
-          if (t < 1) requestAnimationFrame(tick);
-          else resolve();
-        }
-        requestAnimationFrame(tick);
-      });
+        detail.scrollTop = max * Math.max(0, Math.min(1, eased));
 
-      await sleep(stop === 1 ? 700 : 1050);
-      from = stop;
-    }
+        if (t < 1) requestAnimationFrame(tick);
+        else resolve();
+      }
+      requestAnimationFrame(tick);
+    });
+
+    await sleep(650);
   }
 
   async function moveUnder(el, pause = 620) {
@@ -2608,9 +2604,15 @@ window.MEASURES = [
     await typeHuman(search, "meanig");
     await enter(search);
 
-    // Let the misspelled search and fuzzy results remain visible long enough
-    // for the viewer to understand what just happened.
-    await sleep(2200);
+    // Let the misspelled search state register first.
+    await sleep(1800);
+
+    // Explicitly click the site's real "Did you mean?" correction.
+    const correction = findCorrection();
+    if (correction) {
+      await click(correction, 1050);
+      await sleep(1400);
+    }
 
     let mlq = findMLQ();
 
