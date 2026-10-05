@@ -2605,16 +2605,34 @@ window.MEASURES = [
     await enter(search);
 
     // Let the misspelled search state register first.
-    await sleep(1800);
+    await sleep(1500);
 
-    // Explicitly click the site's real "Did you mean?" correction.
+    // Explicitly click the site's real "Did you mean?" correction,
+    // then continue immediately so this moment doesn't feel like a stop.
     const correction = findCorrection();
     if (correction) {
-      await click(correction, 1050);
-      await sleep(1400);
+      await click(correction, 650);
     }
 
+    // Make sure the corrected search shows the full matching result set
+    // rather than leaving pagination or a stale narrow state in place.
+    const results = document.querySelector(".results");
+    if (results) results.scrollTop = 0;
+
     let mlq = findMLQ();
+
+    // Ensure the viewer can see several matching results before focusing on MLQ.
+    for (let i = 0; i < 3; i++) {
+      const visibleResults = [...document.querySelectorAll(".result")]
+        .filter(row => getComputedStyle(row).display !== "none");
+      if (visibleResults.length >= 3) break;
+
+      const loadMore = document.querySelector(".load-more-wrap.on .load-more-btn:not([hidden])");
+      if (!loadMore) break;
+
+      loadMore.click();
+      await sleep(350);
+    }
 
     if (!mlq) {
       search.focus();
@@ -2626,6 +2644,9 @@ window.MEASURES = [
     }
 
     if (!mlq) throw new Error("Meaning in Life Questionnaire result not found.");
+
+    // Give the broader result set a brief beat before zooming attention to MLQ.
+    await sleep(1100);
 
     const mlqResult = mlq.closest(".result");
     if (mlqResult) {
