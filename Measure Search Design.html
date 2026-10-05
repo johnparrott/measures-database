@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Psychological Measures Search</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<style>
+  :root{
+    --ink:#000;
+    --muted:#686868;
+    --line:#d9d9d9;
+    --bg:#fff;
+    --surface:#fff;
+    --surface-soft:#f5f5f5;
+    --surface-pill:#f1f1f1;
+    --text-soft:#232323;
+    --control:#111;
+    --page-x:48px;
+    --left-col:28.1%;
+    --results-top:416px;
+    --filter-width:300px;
+    --filter-gutter:46px;
+    --nav-h:74px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  button,input{font:inherit}
+  .page{width:100%;height:calc(100vh - var(--nav-h));padding:0 var(--page-x);overflow:hidden}
+
+  .site-nav{
+    height:var(--nav-h);display:flex;align-items:center;border-bottom:1px solid var(--line);
+    padding:0 var(--page-x);background:var(--surface);position:relative;z-index:8;
+  }
+  .site-brand{display:inline-flex;align-items:center;gap:13px;text-decoration:none;color:inherit;min-width:0}
+  .site-brand-logo{width:40px;height:40px;object-fit:contain;display:block;flex:0 0 40px}
+  .site-brand-name{font-size:17px;line-height:1.15;font-weight:600;letter-spacing:-.025em;white-space:nowrap}
+
+  .search-hero{
+    height:244px;
+    display:flex;
+    align-items:flex-end;
+    padding:0 0 35px;
+    border-bottom:1px solid var(--line);
+  }
+  .search-shell{position:relative;width:100%;z-index:5}
+  .search-input{
+    width:100%;
+    border:0;
+    outline:0;
+    padding:0 64px 0 92px;
+    background:transparent;
+    color:var(--ink);
+    font-size:64px;
+    line-height:.98;
+    letter-spacing:-0.055em;
+    font-weight:400;
+  }
+  .search-input::placeholder{color:#b8b8b8;opacity:1}
+  .search-input::-webkit-search-cancel-button{
+    -webkit-appearance:none;
+    appearance:none;
+    display:none;
+  }
+  .search-input::-webkit-search-decoration{
+    -webkit-appearance:none;
+  }
+  .search-icon{
+    position:absolute;left:0;bottom:4px;
+    width:58px;height:58px;border:0;background:transparent;padding:0;display:grid;place-items:center;cursor:pointer;
+  }
+  .search-icon svg{width:50px;height:50px;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}
+  .search-clear{position:absolute;right:0;bottom:10px;width:44px;height:44px;border:0;background:transparent;padding:0;display:none;place-items:center;cursor:pointer;color:#6b6b6b;border-radius:999px}
+  .search-clear.on{display:grid}
+  .search-clear:hover{background:#f2f2f2;color:#111}
+  .search-clear svg{width:22px;height:22px;stroke-width:1.45;stroke-linecap:round}
+  .suggestions-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px}
+  .suggestions-title{font-size:16px;line-height:1.3;color:#5f5f5f;margin:0;font-weight:600}
+  .escape-hint{display:flex;align-items:center;gap:7px;color:#8a8a8a;font-size:12px;line-height:1}
+  .escape-hint kbd{font-family:inherit;font-size:11px;font-weight:500;line-height:1;padding:5px 6px;border:1px solid #d8d8d8;border-radius:6px;background:#fafafa;box-shadow:0 1px 0 rgba(0,0,0,.04);color:#666}
+
+
+  .suggestions{
+    position:absolute;
+    left:calc(50% - 50vw);
+    width:100vw;
+    top:calc(100% + 30px);
+    background:var(--surface);
+    padding:56px var(--page-x);
+    border-bottom:1px solid var(--line);
+    height:0;
+    opacity:0;
+    overflow:hidden;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(-10px);
+    transform-origin:top;
+    transition:height .34s cubic-bezier(.22,.8,.22,1), opacity .2s ease, transform .34s cubic-bezier(.22,.8,.22,1), visibility 0s linear .34s;
+  }
+  .suggestions.on{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0);
+    overflow:hidden;
+    transition:height .42s cubic-bezier(.22,.8,.22,1), opacity .2s ease, transform .42s cubic-bezier(.22,.8,.22,1), visibility 0s;
+  }
+  .suggestions-backdrop{
+    position:fixed;left:0;right:0;top:calc(var(--nav-h) + 244px);bottom:0;z-index:4;
+    opacity:0;pointer-events:none;
+    background:rgba(0,0,0,.48);
+    -webkit-backdrop-filter:blur(16px);
+    backdrop-filter:blur(16px);
+    transition:opacity .18s ease;
+  }
+  .suggestions-backdrop.on{opacity:1;pointer-events:auto;cursor:pointer}
+  .suggestion-group + .suggestion-group{margin-top:34px}
+  .suggestion-group-title{font-size:14px;line-height:1.3;color:#6f6f6f;margin:0 0 9px;padding:0 12px;font-weight:600}
+  .did-you-mean .suggestion-group-title{color:#5f5f5f}
+  .did-you-mean .suggestion-item{background:#f5f5f5}
+  .suggestion-item{
+    width:100%;height:48px;border:0;background:transparent;border-radius:10px;
+    display:flex;align-items:center;gap:16px;padding:0 16px;cursor:pointer;text-align:left;
+    color:#666;font-size:15px;font-weight:500;letter-spacing:-.015em;
+  }
+    .suggestion-item:hover{background:#f5f5f5;color:#202020}
+  .suggestion-item svg{width:18px;height:18px;flex:0 0 18px;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .suggestion-item .suggestion-label{min-width:0;flex:1}
+  .suggestion-count{margin-left:auto;color:#9a9a9a;font-size:13px;font-weight:500;line-height:1;flex:0 0 auto}
+  .suggestion-item:hover .suggestion-count{color:#707070}
+  .suggestion-item.recent-item .suggestion-label{flex:0 1 auto}
+  .recent-remove{margin-left:4px;width:28px;height:28px;flex:0 0 28px;border:0;background:transparent;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:#8a8a8a;padding:0}
+  .recent-remove:hover{background:#e9e9e9;color:#1d1d1f}
+  .recent-remove svg{width:13px;height:13px;stroke-width:1.6}
+  .suggestion-label{font-weight:500;color:#777}
+  .suggestion-match{font-weight:700;color:#1d1d1f}
+  .suggestion-item:hover .suggestion-label{color:#666}
+
+  .control-row{
+    height:98px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:28px;
+    border-bottom:1px solid var(--line);
+  }
+  .control-left{display:flex;align-items:flex-start;gap:18px;min-width:0;flex-wrap:wrap}
+  .control-actions{display:flex;align-items:center;gap:46px;flex:0 0 auto}
+  .sort-wrap{display:inline-flex;align-items:center;gap:10px;height:42px;color:#111}
+  .sort-prefix{font-size:16px;font-weight:500;color:#111;white-space:nowrap}
+  .sort-segments{position:relative;display:inline-flex;align-items:center;gap:16px;height:100%}
+  .sort-segment{position:relative;border:0;background:transparent;color:#777;padding:0 0 3px;font-size:16px;font-weight:500;cursor:pointer;transition:color .18s ease}
+  .sort-segment:hover{color:#111}
+  .sort-segment.active{color:#111}
+  .sort-segment:focus-visible{outline:2px solid #111;outline-offset:4px;border-radius:2px}
+  .sort-indicator{position:absolute;left:0;bottom:5px;height:1.5px;background:#111;width:0;transform:translateX(0);transition:transform .28s cubic-bezier(.22,.8,.22,1),width .28s cubic-bezier(.22,.8,.22,1)}
+  .result-status{display:none;flex-direction:column;align-items:flex-start;gap:12px;min-width:0}
+  .result-status.on{display:flex}
+  .results-status-block{padding:30px 0 28px;border-bottom:1px solid var(--line)}
+  .filter-btn{
+    position:relative;
+    display:inline-flex;align-items:center;gap:9px;height:42px;
+    margin:0;
+    padding:0 16px;border:1.5px solid #111;background:#fff;cursor:pointer;border-radius:999px;
+    font-size:16px;line-height:1;font-weight:500;color:var(--ink);
+    overflow:visible;
+    transition:border-color .18s ease, background .18s ease,color .18s ease;
+  }
+  .filter-btn:hover{border-color:#111;background:#fafafa}
+  .filter-btn svg{width:17px;height:17px;stroke-width:1.8;stroke:currentColor}
+  .filter-count{
+    display:none;align-items:center;justify-content:center;
+    position:absolute;top:-11px;right:-11px;
+    width:28px;height:28px;min-width:28px;padding:0;
+    border-radius:50%;background:#111;color:#fff;
+    border:3px solid #fff;box-sizing:border-box;
+    font-size:12px;font-weight:700;line-height:1;
+    z-index:2;
+  }
+  .filter-count.on{display:flex}
+  .filter-btn[aria-expanded="true"] .filter-count{background:#111;color:#fff}
+  .filter-btn[aria-expanded="true"]{font-weight:600;background:#111;color:#fff;border-color:#111}
+  .result-count{font-size:16px;line-height:1.2;color:var(--muted)}
+  .result-count strong{font-weight:600;color:#171717}
+  .search-summary{display:none;font-size:13px;line-height:1.3;color:#888;letter-spacing:-.008em}
+  .search-summary.on{display:block}
+  .search-summary .did-you-mean-inline{color:#888}
+  .search-summary .did-you-mean-inline button{border:0;background:transparent;padding:0;margin-left:5px;font:inherit;font-weight:600;color:#555;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+  .search-summary .did-you-mean-inline button:hover{opacity:.6}
+
+
+  .results{width:100%;height:calc(100vh - var(--results-top));overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;transition:margin-left .34s cubic-bezier(.22,.8,.22,1),width .34s cubic-bezier(.22,.8,.22,1)}
+  body.filters-open .results{margin-left:calc(var(--filter-width) + var(--filter-gutter));width:calc(100% - var(--filter-width) - var(--filter-gutter))}
+  .result{
+    position:relative;
+    display:grid;
+    grid-template-columns:var(--left-col) 1fr;
+    border-bottom:1px solid var(--line);
+    padding:44px 48px 44px 0;
+    text-decoration:none;
+    color:inherit;
+    transition:border-color .18s ease;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .measure-title-link:hover .measure-title{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+  }
+  .meta{padding-right:40px;transition:transform .2s cubic-bezier(.22,.8,.22,1)}
+  .measure{padding-right:0;max-width:760px;transition:transform .2s cubic-bezier(.22,.8,.22,1)}
+  .construct{font-size:15px;line-height:1.28;font-weight:600;letter-spacing:-.015em;margin-bottom:14px}
+  .date{font-size:14px;line-height:1.35;color:var(--muted);letter-spacing:-.01em;font-weight:500}
+  .measure-title{font-size:24px;line-height:1.14;font-weight:600;letter-spacing:-.034em;margin:0 0 14px;max-width:720px}
+  .measure-title-link{color:inherit;text-decoration:none;display:inline-block;cursor:pointer}
+  .measure-desc-wrap{max-width:560px}
+  .measure-desc{font-size:16px;line-height:1.46;font-weight:400;letter-spacing:-.015em;margin:0;color:#232323;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .measure-desc.expanded{display:block;overflow:visible}
+  .measure-desc.animating{display:block;-webkit-line-clamp:unset;overflow:hidden;will-change:height,opacity}
+  .abstract-more{border:0;background:transparent;padding:0;margin:5px 0 0;font:inherit;font-size:14px;line-height:1.3;font-weight:650;color:#111;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+  .abstract-more:hover{color:#000}
+  .abstract-more i{font-size:13px;line-height:1;transition:transform .2s ease}
+  .abstract-more[aria-expanded="true"] i{transform:rotate(180deg)}
+  .abstract-more[hidden]{display:none}
+  .measure-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+  .measure-pill{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;background:#f1f1f1;color:#6f6f6f;font-size:13px;line-height:1;font-weight:500;letter-spacing:-.01em;white-space:nowrap}
+  .measure-pill-icon{width:14px;height:14px;display:grid;place-items:center;flex:0 0 14px;color:#777;font-size:14px;line-height:1}
+  .measure-pill-icon i{display:block;font-size:14px;line-height:1}
+  .measure-pill-number{font-weight:700;color:#555}
+
+  .load-more-wrap{display:none;justify-content:center;padding:34px 0 10px}
+  .load-more-wrap.on{display:flex}
+  .load-more-btn{height:44px;border:0;border-radius:999px;background:#111;color:#fff;padding:0 20px;font:inherit;font-size:14px;line-height:1;font-weight:600;letter-spacing:-.01em;cursor:pointer;transition:background .18s ease,transform .18s ease}
+  .load-more-btn:hover{background:#2a2a2a}
+  .load-more-btn:active{transform:scale(.98)}
+
+  .empty{display:none;padding:56px 0 72px;border-bottom:1px solid var(--line)}
+  .empty-headline{font-size:30px;line-height:1.12;font-weight:600;letter-spacing:-.035em;max-width:900px;margin:0 0 14px}
+  .empty-sub{font-size:42px;line-height:1.08;font-weight:600;letter-spacing:-.045em;color:#1d1d1f;max-width:720px;margin:0}
+  .empty-section{margin-top:54px}
+  .empty-section-title{font-size:20px;line-height:1.2;font-weight:600;letter-spacing:-.025em;margin:0 0 22px}
+  .empty-suggestions{display:flex;flex-wrap:wrap;gap:10px;max-width:900px}
+  .empty-search-chip{height:42px;border:1px solid #d8d8d8;border-radius:999px;background:#fff;padding:0 16px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font:inherit;font-size:14px;font-weight:500;color:#292929;transition:border-color .16s ease,color .16s ease}
+  .empty-search-chip:hover{border-color:#aaa;color:#111}
+  .empty-search-chip i{font-size:15px;color:#858585}
+  .empty-search-count{color:#8a8a8a;font-size:13px;font-weight:500;margin-left:2px}
+  .empty-reset{margin-top:28px;height:42px;border:1px solid #111;border-radius:999px;background:#111;color:#fff;padding:0 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .empty-reset:hover{background:#262626}
+  @media(max-width:760px){.empty-headline{font-size:26px}.empty-sub{font-size:34px;max-width:100%}}
+  .results::after{content:"";display:block;height:48px}
+
+  .scrim{display:none}
+  .drawer{
+    position:fixed;top:var(--results-top);left:var(--page-x);bottom:0;width:var(--filter-width);background:var(--surface);z-index:3;
+    transform:translateX(calc(-100% - var(--page-x) - 2px));transition:transform .34s cubic-bezier(.22,.8,.22,1), visibility 0s linear .34s;visibility:hidden;
+    padding:20px var(--filter-gutter) 28px 0;display:flex;flex-direction:column;overflow-y:auto;
+    border-right:1px solid #e8e8e8;
+  }
+  .drawer.on{transform:translateX(0);visibility:visible;transition:transform .34s cubic-bezier(.22,.8,.22,1), visibility 0s}
+  .facet-sections{display:flex;flex-direction:column}
+  .facet-section{padding:24px 0;border-top:1px solid #eeeeee}
+  .facet-section:first-child{border-top:0;padding-top:24px}
+  .facet-header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0;border:0;background:transparent;cursor:pointer;text-align:left}
+  .facet-title{font-size:15px;line-height:1.2;font-weight:600;letter-spacing:-.015em;color:#111}
+  .facet-chevron{width:18px;height:18px;color:#a1a1a1;transition:transform .22s ease}
+  .facet-chevron svg{width:100%;height:100%;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .facet-section.collapsed .facet-chevron{transform:rotate(180deg)}
+  .facet-body{overflow:hidden;transition:grid-template-rows .25s ease,opacity .22s ease,margin-top .25s ease;margin-top:16px;display:grid;grid-template-rows:1fr;opacity:1}
+  .facet-section.collapsed .facet-body{grid-template-rows:0fr;opacity:0;margin-top:0}
+  .facet-body-inner{min-height:0}
+  .facet-chip-grid{display:flex;flex-wrap:wrap;gap:10px}
+  .age-chip-grid{display:flex;flex-wrap:wrap;gap:10px}
+  .age-chip{min-height:38px;border:1px solid #dedede;background:#fff;color:#444;border-radius:999px;padding:0 13px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;line-height:1;font-weight:500;letter-spacing:-.01em;transition:background .18s ease,color .18s ease,border-color .18s ease}
+  .age-chip:hover{border-color:#c7c7c7;color:#111}
+  .age-chip.active{background:#111;color:#fff;border-color:#111}
+  .age-chip-icon{width:17px;height:17px;display:grid;place-items:center;flex:0 0 17px}
+  .age-chip-icon i{font-size:17px;line-height:1}
+  .language-glyph{width:17px;height:17px;display:grid;place-items:center;flex:0 0 17px;color:#111;font-size:13px;font-weight:700;line-height:1}
+  .facet-chip{
+    min-height:38px;border:1px solid #dedede;background:#fff;color:#444;border-radius:999px;
+    padding:0 13px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    font-size:13px;line-height:1;font-weight:500;letter-spacing:-.01em;transition:border-color .18s ease,box-shadow .18s ease,color .18s ease;
+  }
+  .facet-chip:hover{border-color:#c7c7c7;color:#111}
+  .facet-chip.active{border-color:#111;background:#111;color:#fff;box-shadow:none}
+  .facet-chip.active .facet-chip-icon,.facet-chip.active .language-glyph{color:#fff}
+  .facet-chip:disabled{opacity:.35;cursor:default}
+  .facet-chip-icon{width:17px;height:17px;display:grid;place-items:center;flex:0 0 17px;color:#111}
+  .facet-chip-icon svg{display:block;width:17px;height:17px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .facet-chip.any{padding:0 14px}
+  .facet-chip.any .facet-chip-icon{display:none}
+  .filter-footer{margin-top:24px;padding-top:18px;border-top:1px solid #e8e8e8;display:flex;gap:10px;width:100%}
+  .filter-footer button{height:40px;border-radius:999px;padding:0 16px;font-size:13px;font-weight:600;letter-spacing:-.01em;cursor:pointer}
+  .filter-reset{border:1px solid #d8d8d8;background:#fff;color:#333}
+  .filter-reset:hover{border-color:#bdbdbd;color:#111}
+  .filter-apply{border:1px solid #111;background:#111;color:#fff;flex:1}
+  .filter-apply:hover{background:#242424;border-color:#242424}
+
+  @media (max-width:900px){
+    :root{--page-x:22px;--left-col:35%;--results-top:352px;--nav-h:64px}
+    .search-hero{height:190px;padding-bottom:28px}
+    .suggestions-backdrop{top:calc(var(--nav-h) + 190px)}
+    .search-input{font-size:46px}
+    .result{padding:38px 0}
+    .measure{padding-right:0}
+    .measure-title{font-size:22px}
+  }
+  @media (max-width:900px){
+    :root{--filter-width:280px;--filter-gutter:32px}
+  }
+  @media (max-width:620px){
+    .site-brand{gap:10px}
+    .site-brand-logo{width:34px;height:34px;flex-basis:34px}
+    .site-brand-name{font-size:15px;white-space:normal}
+    .search-hero{height:158px}
+    .suggestions-backdrop{top:calc(var(--nav-h) + 158px)}
+    .search-input{font-size:38px;padding:0 52px 0 64px}
+    .search-icon{width:42px;height:42px;bottom:0}.search-icon svg{width:36px;height:36px;stroke-width:1.15}
+    .search-clear{right:0;bottom:1px;width:38px;height:38px}.search-clear svg{width:19px;height:19px}
+    .suggestions{top:calc(100% + 24px)}.suggestion-item{font-size:14px;height:44px;padding:0 12px;gap:13px}
+    :root{--results-top:294px}
+    :root{--filter-width:min(280px,88vw);--filter-gutter:24px}
+    .drawer-title{font-size:20px}
+
+  .control-row{height:72px}
+    .result{grid-template-columns:1fr;gap:20px;padding:30px 36px 30px 0}
+    .result::after{right:4px}
+    .meta{padding-right:0}.construct{font-size:14px}.date{font-size:13px}
+    .measure-title{font-size:21px}.measure-desc{font-size:15px}.measure-meta{gap:8px;margin-top:28px}.measure-pill{min-height:26px;padding:0 9px;font-size:12px}
+  }
+
+
+  /* Measure detail view */
+  .detail-view{display:none;position:fixed;inset:var(--nav-h) 0 0;background:#fff;z-index:80;overflow:auto}
+  body.detail-open{overflow:hidden}
+  body.detail-open .detail-view{display:block}
+  .detail-shell{max-width:1240px;margin:0 auto;padding:34px var(--page-x) 96px}
+  .detail-back{border:0;background:transparent;padding:8px 0;margin:0 0 34px;display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;font-weight:600;color:#333;cursor:pointer}
+  .detail-back:hover{color:#000}
+  .detail-back i{font-size:16px}
+  .detail-hero{display:block;padding:150px 0;max-width:980px;margin:0 auto;text-align:center}
+  .detail-hero-left,.detail-hero-right{min-width:0}
+    .detail-title{font-size:76px;line-height:.96;letter-spacing:-.055em;font-weight:600;max-width:780px;margin:0 auto}
+  .detail-abstract-label{display:none}
+    .detail-meta-row{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;margin-top:28px}
+  .detail-citation{font-size:17px;line-height:1.6;font-weight:500;color:#292929}
+  .fact-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:0;width:100%;max-width:none;margin:0 0 108px;background:#f5f5f7;border-radius:24px;padding:26px 30px 24px}
+  .fact{position:relative;min-width:0;padding:0 22px;text-align:center}
+  .fact:not(:last-child)::after{content:"";position:absolute;right:0;top:7px;bottom:5px;width:1px;background:#dddde3}
+  
+  .fact-label{display:none}
+  .fact-value{font-size:32px;line-height:1;font-weight:600;letter-spacing:-.045em;color:#17171a;white-space:nowrap}
+  .fact-sub{margin-top:10px;font-size:16px;line-height:1.15;font-weight:560;color:#73737c;white-space:nowrap}
+  .detail-body{display:block;max-width:1120px;margin:0 auto}
+  .detail-nav{display:none}
+  .detail-nav-label{font-size:11px;line-height:1;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:#9a9a9a;margin:0 0 16px}
+  .detail-nav-list{display:flex;flex-direction:column;gap:3px}
+  .detail-nav-link{position:relative;border:0;background:transparent;text-align:left;padding:9px 0 9px 16px;font:inherit;font-size:14px;line-height:1.25;font-weight:560;color:#858585;cursor:pointer;transition:color .16s ease}
+  .detail-nav-link::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px;background:transparent;transition:background .16s ease}
+  .detail-nav-link:hover{color:#111}
+  .detail-nav-link.active{color:#111;font-weight:650}
+  .detail-nav-link.active::before{background:#111}
+  .detail-main{min-width:0}
+  .detail-section{display:grid;grid-template-columns:220px minmax(0,1fr);gap:72px;align-items:start;padding:54px 0;border-top:1px solid #e6e6e6;scroll-margin-top:28px}
+  .detail-section:first-child{border-top:0;padding-top:0}
+  .detail-section-title{font-size:17px;line-height:1.25;font-weight:600;letter-spacing:-.02em;margin:2px 0 0;position:sticky;top:28px;display:flex;align-items:center;gap:10px}.detail-section-title i{font-size:18px;line-height:1;color:#111;flex:0 0 auto}
+  .detail-copy{font-size:17px;line-height:1.65;color:#292929;margin:0}
+  .detail-copy + .detail-copy{margin-top:16px}
+  .instruction-copy{font-size:17px;line-height:1.65;color:#292929;margin:0}
+  .survey-preview{max-width:760px}
+  .survey-scale{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:12px;row-gap:28px}
+  .survey-choice{display:contents}
+  .survey-number{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1.5px solid #171717;border-radius:999px;font-size:15px;line-height:1;font-weight:600;color:#171717;font-variant-numeric:tabular-nums}
+  .survey-label{font-size:16px;line-height:1.45;color:#292929}
+  .item-list{list-style:none;padding:0;margin:0;counter-reset:item;display:flex;flex-direction:column;gap:28px}
+  .item-list li{counter-increment:item;display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:10px;align-items:start;padding:0;font-size:16px;line-height:1.5}
+  .item-list li::before{content:counter(item);font-variant-numeric:tabular-nums;color:#171717;font-size:16px;line-height:1.5;font-weight:600;padding-top:0}
+  .item-text{min-width:0}
+  .item-text-wrap{min-width:0;display:block}
+  .item-meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .reverse-score-pill,.item-subscale-pill{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;background:#f1f1f1;color:#6f6f6f;font-size:13px;line-height:1;font-weight:500;letter-spacing:-.01em;white-space:nowrap}
+  .reverse-score-pill i{display:block;font-size:14px;line-height:1;color:#777}
+  
+  @media(max-width:700px){.item-list li{grid-template-columns:24px minmax(0,1fr)}.survey-scale{grid-template-columns:34px minmax(0,1fr)}}
+  .spec-table{border-top:0}
+  .spec-row{display:grid;grid-template-columns:170px minmax(0,1fr);gap:40px;padding:30px 0;border-bottom:1px solid #e4e4e4}
+  .spec-label{font-size:15px;line-height:1.3;font-weight:600;letter-spacing:-.02em;color:#202020}
+  .spec-content{min-width:0;font-size:15px;line-height:1.6;color:#292929}
+  .spec-content p{margin:0}.spec-content p+p{margin-top:10px}
+  .subscale-columns{display:grid;grid-template-columns:1fr 1fr;gap:44px}
+  .subscale-title{font-size:17px;font-weight:600;letter-spacing:-.025em;margin-bottom:8px}
+  .subscale-items{font-size:14px;color:#666;margin-top:10px}
+  .score-formula{font-size:28px;line-height:1.15;font-weight:600;letter-spacing:-.04em;margin:4px 0 10px}
+  .scoring-list{display:flex;flex-direction:column;gap:18px;max-width:720px}
+  .scoring-item{font-size:17px;line-height:1.6;color:#444}
+  .scoring-item strong{font-weight:600;color:#202020}
+  .scoring-note{margin-top:22px;font-size:15px;line-height:1.55;color:#6d6d73;max-width:680px}
+  .psychometric-pair{display:flex;flex-direction:column;gap:20px;width:100%}
+  .reliability-card{position:relative;border:1px solid #d9d9dc;border-radius:18px;padding:32px 40px 32px;background:#fff;width:100%;box-sizing:border-box;display:flex;flex-direction:column}
+  .reliability-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 62px}.reliability-title-group{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.reliability-kicker{font-size:15px;line-height:1.3;font-weight:600;color:#202020;letter-spacing:-.02em}.psychometric-name{font-size:17px;font-weight:600;color:#202020;margin:0}.reliability-info-wrap{position:relative;display:inline-flex;flex:0 0 auto}.reliability-info-wrap::after{content:"";position:absolute;left:-8px;right:-8px;top:24px;height:14px}.reliability-info{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;background:transparent;color:#b3b3b8;padding:0;cursor:help;flex:0 0 auto;border-radius:999px;text-decoration:none;transition:color .18s ease,background .18s ease}.reliability-info i{font-size:19px;line-height:1}.reliability-info:hover,.reliability-info:focus-visible{color:#6f6f75;background:#f4f4f5;outline:none;text-decoration:none}.reliability-source-popover{position:absolute;right:0;top:28px;z-index:20;width:310px;max-width:min(310px,80vw);padding:11px 12px 12px;border-radius:10px;background:#1f1f1f;color:#fff;font-size:12px;line-height:1.45;font-weight:500;white-space:normal;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.14);opacity:0;transform:translateY(-2px);pointer-events:none;transition:opacity .16s ease,transform .16s ease}.reliability-info-wrap:hover .reliability-source-popover,.reliability-info-wrap:focus-within .reliability-source-popover{opacity:1;transform:translateY(0);pointer-events:auto}.reliability-source-label{display:block;font-weight:700;margin-bottom:7px}.reliability-source-link{display:block;color:#fff;text-decoration:none;font-weight:500;padding-left:1.35em;text-indent:-1.35em}.reliability-source-link:hover,.reliability-source-link:focus-visible{text-decoration:underline;text-underline-offset:2px;outline:none}
+  .reliability-content{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;width:100%}
+  .reliability-main{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;min-width:0;width:100%;padding-right:0;box-sizing:border-box}
+  .reliability-scale{position:relative;display:grid;grid-template-columns:1.2fr .9fr 1.35fr;gap:10px;width:min(100%,620px);align-items:start;padding-top:96px}
+  .reliability-band{display:flex;flex-direction:column;align-items:flex-start;min-width:0;color:#8e8e93}
+  .reliability-band-line{display:block;position:relative;width:100%;height:8px;border-radius:999px;overflow:hidden}
+  .reliability-band-fill{display:block;height:100%;border-radius:999px}
+  .reliability-band.red .reliability-band-line{background:rgba(255,95,87,.22)}
+  .reliability-band.yellow .reliability-band-line{background:rgba(255,189,20,.22)}
+  .reliability-band.green .reliability-band-line{background:rgba(52,199,89,.22)}
+  .reliability-band.red .reliability-band-fill{background:#ff5f57}
+  .reliability-band.yellow .reliability-band-fill{background:#ffbd14}
+  .reliability-band.green .reliability-band-fill{background:#34c759}
+  .reliability-band.is-complete .reliability-band-fill{width:100%}
+  .reliability-band.is-active .reliability-band-fill{width:var(--active-fill,0%)}
+  .reliability-band:not(.is-complete):not(.is-active) .reliability-band-fill{width:0%}
+  .reliability-current{--callout-bg:#e4f6e8;--callout-ink:#2f8f46;position:absolute;left:var(--marker,84%);top:4px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#171717;transform:translateX(-50%);white-space:nowrap;background:var(--callout-bg);border-radius:16px;padding:12px 16px 14px;min-width:170px;box-sizing:border-box}
+  .reliability-current::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:var(--callout-bg);transform:translateX(-50%) rotate(45deg);border-radius:3px;z-index:0}
+  .reliability-current .alpha-line{display:flex;align-items:baseline;gap:6px;position:relative;z-index:1;margin-top:-2px}
+  .reliability-current .alpha-symbol,.reliability-current .alpha-value{font-size:22px;font-weight:600;letter-spacing:-.03em}
+  .reliability-current .reliability-status{position:relative;z-index:1;font-size:14px;line-height:1.25;color:var(--callout-ink);font-weight:600;margin-bottom:2px}
+  
+  .reliability-axis{grid-column:1 / -1;display:grid;grid-template-columns:1.2fr .9fr 1.35fr;gap:10px;margin-top:4px;font-size:12px;line-height:1.2;font-weight:600;color:#8f8f94}
+  .reliability-axis-segment{display:flex;justify-content:space-between;align-items:center}
+  .reliability-axis-segment span:last-child{text-align:right}
+  .reliability-explainer{margin-top:40px;padding:36px 0 0;border-top:1px solid #dedede;font-size:15px;line-height:1.55;color:#444;overflow-wrap:break-word;display:flex;flex-direction:column;justify-content:flex-start;align-self:start;max-width:none;width:100%;box-sizing:border-box}
+  .reliability-explainer strong{display:block;margin-bottom:10px;font-weight:600;color:#202020}
+  .internal-consistency-block{display:flex;flex-direction:column;gap:18px}
+  .internal-consistency-heading{font-size:15px;line-height:1.3;font-weight:600;letter-spacing:-.02em;color:#202020;margin:0 0 2px}
+    .psychometric-note{font-size:13px;color:#707070;margin-top:6px;line-height:1.4}
+  .factor-structure-card{border:1px solid #d9d9dc;border-radius:18px;padding:32px 40px;background:#fff;display:flex;flex-direction:column;gap:26px;width:100%;box-sizing:border-box;margin-top:42px}
+  .factor-kicker{font-size:15px;line-height:1.3;font-weight:600;color:#202020;letter-spacing:-.02em}.factor-title-group{display:flex;flex-direction:column;align-items:flex-start;gap:7px}.factor-card-title{font-size:17px;line-height:1.35;font-weight:600;letter-spacing:-.02em;color:#202020}
+  .factor-paper{display:flex;flex-direction:column;gap:18px;width:100%}
+  .factor-paper-svg{display:block;width:100%;height:auto;max-width:980px;margin:0 auto}
+  .factor-paper-svg text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;fill:#202020}
+  .factor-latent{fill:#fff;stroke:#222;stroke-width:2}
+  .factor-item-box{fill:#fff;stroke:#222;stroke-width:1.8;rx:0;ry:0}
+  .factor-arrow{stroke:#222;stroke-width:1.8;fill:none;stroke-linecap:round}.factor-correlation{stroke-width:2}
+  .factor-note{padding-top:36px;border-top:1px solid #dedede;font-size:15px;line-height:1.55;color:#444}
+  .factor-note-heading{display:block;margin-bottom:10px;font-weight:600;color:#202020}.factor-note-copy{display:block;margin:0;font-weight:400;color:#444}.factor-note-copy strong{display:inline;font-weight:600;color:#202020}
+.validity-card{border:1px solid #d9d9dc;border-radius:18px;padding:32px 40px;background:#fff;width:100%;box-sizing:border-box;margin-top:40px}
+.validity-card-head{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
+.validity-kicker{font-size:15px;line-height:1.3;font-weight:600;color:#202020;letter-spacing:-.02em}
+.validity-card-title{font-size:17px;line-height:1.35;font-weight:600;letter-spacing:-.02em;color:#202020}
+.validity-sections{display:flex;flex-direction:column}
+.validity-section{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:28px 0;border-top:1px solid #dedede}
+.validity-section:first-child{border-top:0}
+.validity-title-row{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.validity-icon{display:flex;align-items:center;justify-content:flex-start;width:auto;height:auto;border:0;border-radius:0;background:transparent;color:#202020;flex:0 0 auto}
+.validity-icon i{font-size:24px;line-height:1;font-weight:500}
+.validity-section-title{font-size:16px;line-height:1.35;font-weight:600;color:#202020;margin:0}
+.validity-section-text{font-size:15px;line-height:1.55;color:#444;margin:0}
+.criterion-subtypes{display:flex;flex-direction:column;gap:14px;margin-top:6px;margin-left:24px;width:calc(100% - 24px)}
+.criterion-subtype{position:relative;padding-left:16px}
+.criterion-subtype::before{content:"";position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:999px;background:#202020}
+.criterion-subtype-text{font-size:15px;line-height:1.55;color:#444;margin:0}
+.criterion-subtype-text strong{font-weight:600;color:#202020}
+  .validity-list{display:grid;gap:12px;max-width:680px}
+  .validity-row{display:grid;grid-template-columns:160px 1fr;gap:22px;align-items:start}
+  .validity-type{font-size:13px;font-weight:600;color:#202020}
+  .validity-text{font-size:14px;color:#555;line-height:1.5}
+  #detail-related{position:relative;border-top:0;padding-top:64px;padding-bottom:72px;display:block;text-align:left}
+  #detail-related .detail-section-title{display:flex;align-items:baseline;gap:10px;position:static;margin:0 0 40px;text-align:left;font-size:30px;line-height:1.1;font-weight:600;letter-spacing:-.03em;color:#171717}
+  .related-list{display:flex;width:100%;margin:0;padding:0;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);box-shadow:inset 2px 0 0 #fff,inset -2px 0 0 #fff}
+  .related-list::-webkit-scrollbar{display:none}
+  .related-nav{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:20px}
+  .related-nav-button{width:40px;height:40px;border:1px solid #d5d5d8;border-radius:999px;background:#fff;color:#202020;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:background .18s ease,border-color .18s ease,opacity .18s ease}
+  .related-nav-button:hover{background:#f7f7f8;border-color:#b8b8bd}
+  .related-nav-button:disabled{opacity:.35;cursor:default}
+  .related-nav-button i{font-size:18px;line-height:1}
+  .related-result{flex:0 0 33.333333%;min-width:0;min-height:520px;display:flex;flex-direction:column;scroll-snap-align:start;border-right:0;padding:22px 40px 28px;color:inherit;text-decoration:none;box-sizing:border-box}
+  .related-result + .related-result{border-left:1px solid var(--line)}
+  .related-result.edge-divider-hidden{border-left-color:transparent}
+  .related-result:first-child{padding-left:0}
+  .related-result .meta{padding-right:0;display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:0}
+  .related-result .meta .construct{margin:0}
+  .related-result .meta .date{flex:0 0 auto}
+  .related-result .measure{max-width:none;display:flex;flex-direction:column;flex:1;padding-top:190px}
+  .related-result .measure-title{margin-bottom:16px;font-size:28px;line-height:1.12;font-weight:500;letter-spacing:-.035em}
+  .related-result .measure-desc-wrap{max-width:none}
+  .related-result .measure-desc{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:15px;line-height:1.5;color:#4b4b4f}
+  .related-result .measure-meta{margin-top:auto;padding-top:32px;display:flex;flex-wrap:wrap;gap:8px}
+  @media (hover:hover) and (pointer:fine){
+    .related-result .measure-title-link:hover .measure-title{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+  }
+
+  @media(max-width:900px){
+    .detail-title{font-size:52px}.detail-intro{font-size:20px;margin-top:28px}.fact-strip{flex-wrap:wrap;row-gap:24px}.fact{margin-right:24px;padding-right:24px}.fact:not(:last-child)::after{display:none}.detail-section{grid-template-columns:1fr;gap:18px;padding:44px 0}.detail-section-title{position:static;margin:0}#detail-related{padding-top:44px;padding-bottom:52px}#detail-related .detail-section-title{font-size:28px;margin-bottom:28px}.related-result{flex-basis:min(82vw,360px);min-height:460px;padding:20px 26px 24px}.related-result .measure{padding-top:140px}.related-result .measure-title{font-size:24px}.related-result .measure-desc{font-size:15px;-webkit-line-clamp:3}.related-result .measure-meta{gap:8px;margin-top:auto;padding-top:26px}.related-result .measure-pill{min-height:26px;padding:0 9px;font-size:12px}.detail-shell{padding-top:24px}.spec-row{grid-template-columns:1fr;gap:12px;padding:24px 0}.subscale-columns{grid-template-columns:1fr;gap:16px}.scoring-list{gap:16px}.scoring-item{font-size:16px}.scoring-note{margin-top:18px}.psychometric-pair{gap:16px}.reliability-card{padding:24px}.reliability-card-head{margin-bottom:30px}.reliability-content{row-gap:20px}.reliability-main{width:100%}.reliability-scale{width:100%;max-width:340px;padding-top:88px}.reliability-current{min-width:144px;padding:9px 12px 16px}.reliability-current .alpha-symbol,.reliability-current .alpha-value{font-size:20px}.reliability-current .reliability-status{font-size:13px}.reliability-explainer{margin-top:32px;padding-top:30px;max-width:none}.factor-structure-card{padding:24px;margin-top:34px}.factor-paper-svg{max-width:100%}.factor-card-title{font-size:16px}.factor-note{padding-top:30px}.validity-card{padding:24px;margin-top:34px}.validity-section{gap:9px;padding:24px 0}.validity-icon{width:auto;height:auto}.validity-icon i{font-size:22px}.criterion-subtypes{gap:14px;margin-left:20px;width:calc(100% - 20px)}
+  }
+
+</style>
+</head>
+<body>
+<nav class="site-nav" aria-label="Site">
+<a class="site-brand" href="https://db.arabpsychology.com/" target="_blank" rel="noopener">
+<img class="site-brand-logo" src="data:image/png;base64,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" alt=""/>
+<span class="site-brand-name">Psychological Scales &amp; Instruments Database</span>
+</a>
+</nav>
+<div class="page">
+<section class="search-hero">
+<div class="search-shell">
+<input aria-label="Search measures" autocomplete="off" class="search-input" id="search" placeholder="Search measures" type="search"/>
+<button aria-label="Search" class="search-icon">
+<svg aria-hidden="true" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="10.75" cy="10.75" r="6.75"></circle><path d="M15.75 15.75 20 20"></path></svg>
+</button>
+<button aria-label="Clear search" class="search-clear" id="searchClear" type="button">
+<svg aria-hidden="true" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"></path></svg>
+</button>
+<div aria-label="Suggested searches" class="suggestions" id="suggestions">
+<div class="suggestions-head">
+<div class="suggestions-title">Suggested searches</div>
+</div>
+<div id="suggestionList"></div>
+</div>
+</div>
+</section>
+<div aria-hidden="true" class="suggestions-backdrop" id="suggestionsBackdrop"></div>
+<div class="control-row">
+<div class="control-left">
+<div class="control-actions">
+<button class="filter-btn" id="filterBtn" aria-expanded="false" aria-controls="drawer">
+<svg fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+<span>Filter</span>
+<span class="filter-count" id="filterCount" aria-label="0 active filters">0</span>
+</button>
+<div class="sort-wrap" role="group" aria-label="Sort results">
+<span class="sort-prefix">Sort:</span>
+<div class="sort-segments" id="sortSegments">
+<button class="sort-segment active" type="button" data-sort="newest" aria-pressed="true">Newest</button>
+<button class="sort-segment" type="button" data-sort="oldest" aria-pressed="false">Oldest</button>
+<button class="sort-segment" type="button" data-sort="cited" aria-pressed="false">Most cited</button>
+<span class="sort-indicator" id="sortIndicator" aria-hidden="true"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<main class="results" id="results">
+<div class="result-status results-status-block">
+<div class="result-count" id="resultCount">0 results</div>
+<div aria-live="polite" class="search-summary" id="searchSummary"></div>
+</div>
+<div class="load-more-wrap" id="loadMoreWrap"><button class="load-more-btn" id="loadMoreBtn" type="button">Load more</button></div>
+<div class="empty" id="empty" aria-live="polite">
+  <h2 class="empty-headline" id="emptyHeadline">No measures found.</h2>
+  <p class="empty-sub" id="emptySub">Try a new search or explore one of these related constructs.</p>
+  <div id="emptySearchSuggestions">
+    <section class="empty-section" aria-labelledby="emptySuggestionsTitle">
+      <h3 class="empty-section-title" id="emptySuggestionsTitle">Suggested searches</h3>
+      <div class="empty-suggestions" id="emptySuggestions"></div>
+    </section>
+  </div>
+  <button class="empty-reset" id="emptyReset" type="button" hidden>Reset filters</button>
+</div>
+</main>
+</div>
+<aside aria-hidden="true" class="drawer" id="drawer">
+<div class="facet-sections" id="facetSections"></div>
+<div class="filter-footer"><button class="filter-reset" id="resetFilters" type="button">Reset</button><button class="filter-apply" id="applyFilters" type="button">Apply filters</button></div>
+</aside>
+
+<div class="detail-view" id="detailView" aria-hidden="true">
+  <div class="detail-shell">
+    <button class="detail-back" id="detailBack" type="button"><i class="ph-bold ph-arrow-left" aria-hidden="true"></i><span>Back to results</span></button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+<script>
+window.MEASURES = [
+  {
+    "construct": "Psychological inflexibility",
+    "year": "2011",
+    "name": "Acceptance and Action Questionnaire (AAQ-II)",
+    "description": "The Acceptance and Action Questionnaire-II (AAQ-II) is a widely utilized and psychometrically refined self-report instrument designed to measure psychological inflexibility, a core process in Acceptance and Commitment Therapy. It consists of seven items assessing the extent to which private experiences interfere with committed, values-driven action.",
+    "url": "https://db.arabpsychology.com/scales/acceptance-and-action-questionnaire-aaq-ii/",
+    "search_text": "acceptance action questionnaire aaq ii experiential avoidance psychological inflexibility act",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Achievement goals",
+    "year": "2001",
+    "name": "Achievement Goal Questionnaire-Revised (AGQ-R)",
+    "description": "The Achievement Goal Questionnaire-Revised (AGQ-R) is a widely utilized psychological scale designed to assess individuals’ orientations toward achievement in academic settings. Developed primarily by Andrew J. Elliot and colleagues, it operationalizes the 2×2 Achievement Goal Theory framework across mastery and performance, approach and avoidance goals.",
+    "url": "https://db.arabpsychology.com/scales/achievement-goal-questionnaire-revised-agq-r/",
+    "search_text": "achievement goal questionnaire revised agq r motivation mastery performance approach avoidance",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Autistic traits",
+    "year": "2012",
+    "name": "Adult Autism Spectrum Quotient (AQ-10) — Self-administered",
+    "description": "The Adult Autism Spectrum Quotient (AQ-10) is a highly efficient, 10-item screening instrument designed for self-administration in adults. Developed by Allison and colleagues in 2012, it serves as a rapid method to identify individuals exhibiting a high concentration of traits associated with Autism Spectrum Disorder (ASD).",
+    "url": "https://db.arabpsychology.com/scales/adult-autism-spectrum-quotient-aq-10-self-administered/",
+    "search_text": "adult autism spectrum quotient aq 10 autistic traits screening self administered",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Self-efficacy",
+    "year": "—",
+    "name": "Academic Self-Efficacy Scale",
+    "description": "The Academic Self-Efficacy Scale is a brief, eight-item instrument designed to quantify an individual’s perceived competence and confidence in performing various academic tasks and managing school-related challenges. Developed primarily for use with youth and children, it assesses domain-specific self-efficacy beliefs related to studying, homework, grades, and seeking help.",
+    "url": "https://db.arabpsychology.com/scales/academic-self-efficacy-scale/",
+    "search_text": "academic self efficacy scale confidence learning education student self-efficacy",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Parenting practices",
+    "year": "—",
+    "name": "Alabama Parenting Questionnaire (APQ) — Child Version",
+    "description": "The Alabama Parenting Questionnaire (APQ) – Child Version is a self-report instrument designed to assess the frequency of specific parenting practices as perceived and reported by the child. Developed primarily for elementary school-age children, it measures key dimensions of parent-child interaction including positive engagement, discipline, and parental monitoring.",
+    "url": "https://db.arabpsychology.com/scales/alabama-parenting-questionnaire-apq-child-version/",
+    "search_text": "alabama parenting questionnaire apq child version parenting practices family discipline involvement monitoring",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Aggression",
+    "year": "2000",
+    "name": "Aggression Questionnaire (AQ)",
+    "description": "The Aggression Questionnaire (AQ), developed by Buss and Warren in 2000, is a widely utilized self-report measure for assessing aggressive tendencies in children and adults. It consists of 34 items that measure aggressive responses and the individual’s ability to constructively manage those responses.",
+    "url": "https://db.arabpsychology.com/scales/aggression-questionnaire-aq/",
+    "search_text": "aggression questionnaire aq physical verbal anger hostility aggression",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Altruism",
+    "year": "—",
+    "name": "Altruistic Personality Scale",
+    "description": "The Altruistic Personality Scale (APS), also known as the Self-Report Altruism Scale, is a 20-item self-report measure developed to assess an individual’s dispositional tendency toward altruism. It operationalizes altruism by quantifying the historical frequency of altruistic behaviors, especially those directed toward strangers or impersonal causes.",
+    "url": "https://db.arabpsychology.com/scales/altruistic-personality-scale/",
+    "search_text": "altruistic personality scale altruism prosocial helping behavior",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Ambivalent sexism",
+    "year": "—",
+    "name": "Ambivalent Sexism Inventory (ASI)",
+    "description": "The Ambivalent Sexism Inventory (ASI) is a widely utilized psychological instrument designed to measure ambivalent sexism. Developed by Peter Glick and Susan T. Fiske, it differentiates between hostile sexism and benevolent sexism as distinct yet correlated forms of prejudice toward women.",
+    "url": "https://db.arabpsychology.com/scales/ambivalent-sexism-inventory-asi/",
+    "search_text": "ambivalent sexism inventory asi hostile benevolent sexism attitudes gender",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Meaning in life",
+    "year": "2006",
+    "name": "Meaning in Life Questionnaire (MLQ)",
+    "item_count": 10,
+    "description": "The Meaning in Life Questionnaire (MLQ) is a widely utilized 10-item psychometric instrument developed by Steger, Frazier, Oishi, and Kaler in 2006. It assesses subjective meaning in life by distinguishing the extent to which meaning is currently perceived from the extent to which a person is actively searching for significance and purpose.",
+    "url": "https://db.arabpsychology.com/scales/meaning-in-life-questionnaire/",
+    "search_text": "meaning in life questionnaire mlq presence search meaning purpose steger",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Well-being",
+    "year": "1989",
+    "name": "Psychological Well-Being Scale (SPWB)",
+    "description": "The Psychological Well-Being Scale (SPWB), developed by Carol D. Ryff, is a widely used instrument designed to measure eudaimonic well-being. It conceptualizes well-being as a multidimensional construct comprising self-acceptance, positive relations, autonomy, environmental mastery, purpose in life, and personal growth.",
+    "url": "https://db.arabpsychology.com/scales/psychological-well-being-scale-spwb/",
+    "search_text": "psychological well being scale spwb ryff autonomy environmental mastery personal growth positive relations purpose self acceptance eudaimonic well-being",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Subjective happiness",
+    "year": "1999",
+    "name": "Subjective Happiness Scale (SHS)",
+    "description": "The Subjective Happiness Scale (SHS) is a concise, 4-item self-report instrument developed by Sonja Lyubomirsky and Heidi Lepper in 1999. Its primary function is to assess an individual’s global and chronic level of subjective happiness, distinguishing this stable tendency from transient mood fluctuations.",
+    "url": "https://db.arabpsychology.com/scales/subjective-happiness-scale-shs/",
+    "search_text": "subjective happiness scale shs happiness positive psychology global chronic happiness lyubomirsky lepper",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "PTSD symptoms",
+    "year": "2013",
+    "name": "PTSD Checklist 5 (PCL-5)",
+    "description": "A 20-item self-report measure assessing the presence and severity of PTSD symptoms corresponding to DSM-5 criteria.",
+    "url": "https://db.arabpsychology.com/scales/ptsd-checklist-5-pcl-5/",
+    "search_text": "ptsd checklist pcl 5 post traumatic stress disorder trauma symptoms dsm 5 re experiencing avoidance cognition mood hyperarousal"
+  },
+  {
+    "construct": "Meaning in life",
+    "year": "1964",
+    "name": "Purpose In Life Test (PIL)",
+    "description": "The Purpose In Life Test (PIL) is a widely utilized psychometric instrument designed to measure an individual’s sense of meaning and purpose in life, based primarily on the principles of Logotherapy. Developed by James C. Crumbaugh and Leonard T. Maholick in 1964, the PIL consists of 20 items rated on a 7-point scale.",
+    "url": "https://db.arabpsychology.com/scales/purpose-in-life-test-pil/",
+    "search_text": "purpose in life test pil meaning purpose logotherapy existential vacuum crumbaugh maholick meaning in life",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Technology anxiety",
+    "year": "2023",
+    "name": "Abbreviated Technology Anxiety Scale (ATAS)",
+    "description": "The Abbreviated Technology Anxiety Scale (ATAS; Wilson et al., 2023) is an 11-item self-report questionnaire designed to efficiently quantify technology anxiety. Its items target personal sentiments and emotional responses related to information and communication technology.",
+    "url": "https://db.arabpsychology.com/scales/abbreviated-technology-anxiety-scale-atas/",
+    "search_text": "abbreviated technology anxiety scale atas computer anxiety ict fear apprehension technology",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Connectedness to nature",
+    "year": "2023",
+    "name": "ABC Connectedness to Nature Scale (ABC-CNS)",
+    "description": "The ABC Connectedness to Nature Scale (ABC-CNS), developed by Cuadrado et al. (2023), is a concise 15-item inventory designed to quantify an individual’s psychological relationship with the natural world. It assesses affective, behavioral, and cognitive components of connectedness to nature.",
+    "url": "https://db.arabpsychology.com/scales/abc-connectedness-to-nature-scale-abc-cns/",
+    "search_text": "abc connectedness to nature scale abc cns affective behavioral cognitive nature environmental pro environmental",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Positive and negative affect",
+    "year": "1988",
+    "name": "Positive and Negative Affect Schedule (PANAS)",
+    "description": "The Positive and Negative Affect Schedule (PANAS) is a widely utilized, brief self-report measure designed to assess the general dimensions of human mood and emotion. Developed by David Watson, Lee Anna Clark, and Auke Tellegen, it is based on two distinct dimensions: Positive Affect and Negative Affect.",
+    "url": "https://db.arabpsychology.com/scales/positive-and-negative-affect-scale-panas/",
+    "search_text": "positive negative affect schedule panas mood emotion affectivity positive affect negative affect watson clark tellegen",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Student–teacher relationship",
+    "year": "—",
+    "name": "Student-Teacher Relationship Scale (STR)",
+    "description": "The Student-Teacher Relationship Scale (STR) is a widely utilized teacher-report measure designed to assess the quality of the relationship between teachers and individual students, primarily in early childhood and elementary school settings. Developed by Robert C. Pianta, it is grounded in attachment theory and focuses on relational dimensions relevant to child development and school success.",
+    "url": "https://db.arabpsychology.com/scales/student-teacher-relationship-scale-str/",
+    "search_text": "student teacher relationship scale str closeness conflict dependency attachment classroom school pianta",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Relationship satisfaction",
+    "year": "1988",
+    "name": "Relationship Assessment Scale (RAS)",
+    "description": "The Relationship Assessment Scale (RAS) is a concise, 7-item psychological scale developed in 1988 by Susan S. Hendrick to measure an individual’s general satisfaction within a current romantic relationship. Its brevity and strong psychometric properties have made it a widely adopted measure of relationship quality.",
+    "url": "https://db.arabpsychology.com/scales/relationship-assessment-scale/",
+    "search_text": "relationship assessment scale ras romantic relationship satisfaction quality dyadic intimate partnership hendrick",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Religious quest orientation",
+    "year": "1991",
+    "name": "QUEST Scale",
+    "description": "The Quest Scale measures a religious orientation defined by an ongoing, complex search for meaning. Following concerns about earlier versions, Batson and Schoenrade developed a definitive 12-item version to provide a more reliable assessment of this orientation.",
+    "url": "https://db.arabpsychology.com/scales/quest-scale/",
+    "search_text": "quest scale religious quest orientation existential questions doubt openness change religion spirituality",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Behavioral intentions",
+    "year": "—",
+    "name": "Theory of Planned Behavior Questionnaire",
+    "description": "A questionnaire framework for assessing attitudes, subjective norms, perceived behavioral control, intentions, and related predictors of behavior.",
+    "url": "https://db.arabpsychology.com/scales/theory-of-planned-behavior-questionnaire/",
+    "search_text": "theory planned behavior questionnaire behavioral intentions attitudes subjective norms perceived behavioral control"
+  },
+  {
+    "construct": "Ethical ideology",
+    "year": "1980",
+    "name": "Ethics Position Questionnaire",
+    "description": "The Ethics Position Questionnaire (EPQ) is a concise, 20-item psychological instrument developed by Donelson R. Forsyth in 1980. It measures ethical ideology through two underlying dimensions—idealism and relativism—and characterizes approaches to moral conflict.",
+    "url": "https://db.arabpsychology.com/scales/ethics-position-questionnaire/",
+    "search_text": "ethics position questionnaire epq idealism relativism moral ethical ideology fors yth",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Psychological adjustment",
+    "year": "—",
+    "name": "Psychological Adjustment Scale",
+    "description": "The Psychological Adjustment Scale (PAS) is a psychometric instrument designed to quantify psychological adjustment and emotional well-being among people undergoing significant cross-cultural transitions. It is commonly used in acculturation research with migrants and international students.",
+    "url": "https://db.arabpsychology.com/scales/psychological-adjustment-scale/",
+    "search_text": "psychological adjustment scale adaptation coping psychological functioning adjustment",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Personality",
+    "year": "—",
+    "name": "Personality Questionnaire",
+    "description": "The Personality Questionnaire (PQ), developed by Eysenck in 1963, is a 64-item self-report inventory designed to measure fundamental personality dimensions. It assesses traits including Neuroticism, Extraversion, Sociability, and Impulsiveness.",
+    "url": "https://db.arabpsychology.com/scales/personality-questionnaire/",
+    "search_text": "personality questionnaire traits personality individual differences",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Self-efficacy",
+    "year": "1996",
+    "name": "General Self-Efficacy Scale (GSES)",
+    "description": "A 10-item self-report measure of broad confidence in one’s ability to cope with difficult demands and handle challenging or unexpected situations.",
+    "url": "https://db.arabpsychology.com/scales/general-self-efficacy-scale/",
+    "search_text": "general self efficacy scale gses confidence coping difficult demands unexpected situations self efficacy"
+  },
+  {
+    "construct": "Self-efficacy",
+    "year": "—",
+    "name": "Perceived Self-Efficacy Scales",
+    "description": "The Perceived Self-Efficacy Scales are a battery of psychological instruments developed primarily by Guido V. Caprara, Albert Bandura, and colleagues. They measure domain-specific efficacy beliefs within family relationships across filial, parental, marital, and collective family efficacy.",
+    "url": "https://db.arabpsychology.com/scales/perceived-self-efficacy-scales/",
+    "search_text": "perceived self efficacy scales capability confidence domains functioning self efficacy",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Aggression",
+    "year": "1961",
+    "name": "Aggression Scales",
+    "description": "The Aggression Scales, developed by Robert R. Sears in 1961, constitute a psychometric instrument designed to measure multiple dimensions of aggression and aggressive attitudes in children. The revised version contains 60 items organized into five subscales.",
+    "url": "https://db.arabpsychology.com/scales/aggression-scales/",
+    "search_text": "aggression scales aggressive attitudes anxiety projected self aggression prosocial antisocial children",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Aggression",
+    "year": "2001",
+    "name": "The Aggressive Scale",
+    "description": "The Aggressive Scale (TAS), developed by Peggy Orpinas and Robert Frankowski, is a self-report measure designed to assess the frequency and intensity of aggressive behavior among young adolescents. It is used for screening and research on aggression, hostility, anger, and related behavioral tendencies.",
+    "url": "https://db.arabpsychology.com/scales/the-aggressive-scale/",
+    "search_text": "aggressive scale youth adolescents physical verbal indirect aggression anger frequency",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Autistic traits",
+    "year": "2001",
+    "name": "Autism Spectrum Quotient (AQ)",
+    "description": "The Autism Spectrum Quotient (AQ) is a 50-item self-report measure designed to quantify autistic traits in adults and adolescents aged 16 years and older with typical intellectual functioning. Developed by Simon Baron-Cohen and colleagues in 2001, it assesses social skill, attention switching, attention to detail, communication, and imagination.",
+    "url": "https://db.arabpsychology.com/scales/autism-spectrum-quotient-aq/",
+    "search_text": "autism spectrum quotient aq autistic traits adults social skill attention switching detail communication imagination",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Autistic traits",
+    "year": "—",
+    "name": "Autism Spectrum Screening Questionnaire (ASSQ)",
+    "description": "The Autism Spectrum Screening Questionnaire (ASSQ) is a 27-item instrument developed by Ehlers, Gillberg, and Wing (1999) for identifying autism-spectrum characteristics in children and adolescents. It is typically completed by parents or teachers and is designed for youth aged 6 to 17 years.",
+    "url": "https://db.arabpsychology.com/scales/autism-spectrum-screening-questionnaire-assq/",
+    "search_text": "autism spectrum screening questionnaire assq autistic traits children adolescents caregiver teacher social behavioral",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Meaning in life",
+    "year": "1998",
+    "name": "Personal Meaning Profile (PMP)",
+    "description": "The Personal Meaning Profile (PMP) is a multidimensional psychological scale designed by Paul T. P. Wong and colleagues to assess the diverse components that contribute to an individual’s subjective sense of meaning in life. It assesses several sources and dimensions of meaning rather than treating meaning as a single construct.",
+    "url": "https://db.arabpsychology.com/scales/personal-meaning-profile-ppm/",
+    "search_text": "personal meaning profile pmp meaning in life achievement relationships intimacy self acceptance religion self transcendence",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Well-being",
+    "year": "1977",
+    "name": "General Well-Being Schedule (GWB)",
+    "description": "The General Well-Being Schedule (GWB), later referred to as the Psychological General Well-Being Index, is a widely utilized self-report instrument designed to measure subjective psychological well-being and distress in the general population. It was developed by H. J. Dupuy for the U.S. National Center for Health Statistics.",
+    "url": "https://db.arabpsychology.com/scales/general-well-being-schedule-gwb/",
+    "search_text": "general well being schedule gwb psychological well being distress emotional state self control vitality",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Well-being",
+    "year": "1982",
+    "name": "Spiritual Well-Being Scale",
+    "description": "The Spiritual Well-Being Scale, developed by Paloutzian and Ellison, is a widely utilized psychological measure of subjective spiritual well-being. It conceptualizes spiritual well-being through two related dimensions: Religious Well-Being and Existential Well-Being.",
+    "url": "https://db.arabpsychology.com/scales/spiritual-well-being-scale/",
+    "search_text": "spiritual well being scale religious existential purpose fulfillment life satisfaction",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Well-being",
+    "year": "1995",
+    "name": "Mental, Physical, and Spiritual Well-Being Scale",
+    "description": "The Mental, Physical, and Spiritual Well-Being Scale is a comprehensive self-report instrument designed to assess holistic well-being across three interdependent dimensions. Developed primarily by Vella-Brodrick and Allen, it integrates mental, physical, and spiritual aspects of quality of life.",
+    "url": "https://db.arabpsychology.com/scales/mental-physical-and-spiritual-well-being-scale/",
+    "search_text": "mental physical spiritual well being scale psychological health wellness dimensions",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Life satisfaction",
+    "year": "1991",
+    "name": "Life Satisfaction Questionnaire (LSQ)",
+    "description": "A nine-item questionnaire assessing overall life satisfaction alongside satisfaction with major life domains such as health, work, relationships, leisure, and finances.",
+    "url": "https://db.arabpsychology.com/scales/pdf-of-life-satisfaction-questionnaire/",
+    "search_text": "life satisfaction questionnaire lsq quality of life subjective well-being health work relationships leisure finances"
+  },
+  {
+    "construct": "Life satisfaction",
+    "year": "1985",
+    "name": "Satisfaction with Life Scale (SWLS)",
+    "description": "The Satisfaction with Life Scale (SWLS) is a widely used, brief, five-item instrument designed to measure an individual’s global cognitive judgment of life satisfaction. Developed by Diener and colleagues in 1985, it assesses how people evaluate their life as a whole rather than specific domains or momentary emotional states.",
+    "url": "https://db.arabpsychology.com/scales/the-satisfaction-with-life-scale/",
+    "search_text": "satisfaction with life scale swls life satisfaction subjective well-being diener global cognitive judgment",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Resilience",
+    "year": "1993",
+    "name": "Resilience Scale (RS)",
+    "description": "The Resilience Scale (RS), developed by Wagnild and Young in 1993, is a widely adopted psychometric instrument for self-report assessment of psychological resilience. The original scale consists of 25 items measuring positive personality characteristics that support effective coping and adaptation to adversity.",
+    "url": "https://db.arabpsychology.com/scales/resilience-scale-rs/",
+    "search_text": "resilience scale rs wagnild young perseverance self reliance equanimity meaningfulness adversity adaptation",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Social support",
+    "year": "1983",
+    "name": "Social Support Questionnaire (SSQ)",
+    "description": "A questionnaire assessing both the number of people respondents can rely on for support and their satisfaction with the support available to them.",
+    "url": "https://db.arabpsychology.com/scales/social-support-questionnaire/",
+    "search_text": "social support questionnaire ssq sarason support network satisfaction relationships friends family"
+  },
+  {
+    "construct": "Social support",
+    "year": "1987",
+    "name": "Social Support Questionnaire — Short Form (SSQSR)",
+    "description": "A brief version of the Social Support Questionnaire assessing dependable support, acceptance, consolation, and satisfaction with available support.",
+    "url": "https://db.arabpsychology.com/scales/social-support-questionnaire-short-form-ssqsr/",
+    "search_text": "social support questionnaire short form ssqsr dependable help acceptance consolation satisfaction sarason"
+  },
+  {
+    "construct": "Social support",
+    "year": "1975",
+    "name": "Social Support Scale",
+    "description": "The Social Support Scale, developed by Caplan, Cobb, French, Van Harrison, and Pinneau (1975), is a foundational organizational-psychology instrument designed to quantify perceived social support from supervisors, coworkers, and personal networks. It distinguishes instrumental support from emotional support.",
+    "url": "https://db.arabpsychology.com/scales/social-support-scale/",
+    "search_text": "social support scale supervisor coworker family friends instrumental emotional support workplace occupational",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Social support",
+    "year": "1983",
+    "name": "Social Support Measure",
+    "description": "The Social Support Measure, developed by Lisa F. Berkman and Lester Breslow in 1983, is a concise instrument designed to quantify social integration and available social support. It assesses both structural aspects of social relationships and functional aspects such as emotional and instrumental support.",
+    "url": "https://db.arabpsychology.com/scales/social-support-measure/",
+    "search_text": "social support measure berkman breslow close friends relatives groups social integration available support",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Social support",
+    "year": "1988",
+    "name": "Social Support Scale (SSUS)",
+    "description": "A social support instrument assessing perceived support and social experiences involving family, friends, university life, and other interpersonal contexts.",
+    "url": "https://db.arabpsychology.com/scales/social-support-scale-ssus/",
+    "search_text": "social support scale ssus family friends university interpersonal support moharib nasser"
+  },
+  {
+    "construct": "Loneliness",
+    "year": "1978",
+    "name": "Loneliness Scale (LS)",
+    "description": "The Loneliness Scale (LS), most notably associated with the UCLA Loneliness Scale, is designed to measure the subjective feeling of loneliness and social isolation. It focuses on a person’s perceived deficit in social relationships rather than simply objective social isolation.",
+    "url": "https://db.arabpsychology.com/scales/loneliness-scale-ls/",
+    "search_text": "loneliness scale ls ucla social isolation companionship social connection subjective loneliness",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Loneliness",
+    "year": "1978",
+    "name": "UCLA Loneliness Scale",
+    "description": "The UCLA Loneliness Scale is one of the most widely utilized instruments for measuring loneliness as a subjective, distressing experience resulting from a deficit in social relationships. Across several versions, it assesses both emotional and social components of perceived isolation.",
+    "url": "https://db.arabpsychology.com/scales/ucla-loneliness-scale/",
+    "search_text": "ucla loneliness scale russell peplau ferguson isolation companionship left out social relationships",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Loneliness",
+    "year": "1985",
+    "name": "De Jong Gierveld Loneliness Scale",
+    "description": "The De Jong Gierveld Loneliness Scale, developed by de Jong-Gierveld and Kamphuis in 1985, is a psychometrically robust instrument for measuring social and emotional loneliness. The 11-item scale focuses on a person’s subjective perception of deficiencies in relevant social relationships.",
+    "url": "https://db.arabpsychology.com/scales/pdf-of-eenzaamheidsschaal/",
+    "search_text": "de jong gierveld loneliness scale emotional loneliness social loneliness relationships social isolation",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Stress",
+    "year": "—",
+    "name": "Stress in General Scale (SIGS)",
+    "description": "The Stress in General Scale (SIGS) is a concise psychometric instrument developed in 2001 by Stanton and colleagues. It quantifies generalized subjective stress, particularly in organizational and occupational contexts, and captures dimensions of pressure and threat.",
+    "url": "https://db.arabpsychology.com/scales/stress-in-general-scale/",
+    "search_text": "stress in general scale sigs workplace occupational pressure strain threat employees",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Self-esteem",
+    "year": "—",
+    "name": "Self-Esteem Questionnaire",
+    "description": "The Self-Esteem Questionnaire (SEQ) is a psychological instrument developed to assess self-esteem across multiple domains relevant to children and early adolescents. Its developmental-ecological framework assesses peers, school, family, sports, body image, and global self-esteem.",
+    "url": "https://db.arabpsychology.com/scales/self-esteem-questionnaire/",
+    "search_text": "self esteem questionnaire self worth confidence self regard self evaluation",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Emotion regulation",
+    "year": "2003",
+    "name": "Emotion Regulation Questionnaire (ERQ)",
+    "description": "The Emotion Regulation Questionnaire (ERQ) is a concise, 10-item self-report scale designed to measure individual differences in two emotion-regulation strategies. Developed by James J. Gross and Oliver P. John, it assesses habitual cognitive reappraisal and expressive suppression.",
+    "url": "https://db.arabpsychology.com/scales/emotion-regulation-questionnaire-erq/",
+    "search_text": "emotion regulation questionnaire erq cognitive reappraisal expressive suppression gross john emotions regulation",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Emotion regulation",
+    "year": "—",
+    "name": "Emotion Regulation Questionnaire for Children and Adolescents (ERQ-CA)",
+    "description": "The Emotion Regulation Questionnaire for Children and Adolescents (ERQ-CA) is a psychometric instrument designed to measure habitual emotion-regulation strategies among youth. Developed by Gullone and Taffe, it adapts the original ERQ to assess cognitive reappraisal and expressive suppression in children and adolescents.",
+    "url": "https://db.arabpsychology.com/scales/emotion-regulation-questionnaire-for-children-and-adolescents-erq-ca/",
+    "search_text": "emotion regulation questionnaire children adolescents erq ca reappraisal suppression youth",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Optimism",
+    "year": "1997",
+    "name": "Optimism Scale",
+    "description": "The Optimism Scale is a brief, four-item instrument designed to measure dispositional optimism. It was incorporated into the mental-health measures of the National Longitudinal Survey of Youth 1997 and uses a 4-point response format to assess optimistic expectations about future events.",
+    "url": "https://db.arabpsychology.com/scales/the-optimism-scale/",
+    "search_text": "optimism scale dispositional optimism positive expectations future nlsy97",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Hope",
+    "year": "1991",
+    "name": "Hope Scale",
+    "description": "The Hope Scale is a widely utilized psychological scale developed by C. R. Snyder and colleagues in 1991. It measures hope as the perception that one’s goals can be met through two interdependent components: agency, or motivation to pursue goals, and pathways, or perceived routes toward those goals.",
+    "url": "https://db.arabpsychology.com/scales/the-hope-scale/",
+    "search_text": "hope scale snyder agency pathways goals motivation positive psychology",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Empathy",
+    "year": "—",
+    "name": "Toronto Empathy Questionnaire (TEQ)",
+    "description": "The Toronto Empathy Questionnaire (TEQ) is a concise 16-item self-report instrument designed to measure empathy. Developed by Spreng and colleagues in 2009, it conceptualizes empathy primarily as an affective or emotional process rather than emphasizing cognitive perspective-taking.",
+    "url": "https://db.arabpsychology.com/scales/the-toronto-empathy-questionnaire/",
+    "search_text": "toronto empathy questionnaire teq empathy affective empathy emotional responsiveness",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Attachment",
+    "year": "1990",
+    "name": "Attachment Style Measure",
+    "description": "A 13-item self-report measure assessing secure, avoidant, and anxious patterns of adult attachment through beliefs about closeness, trust, dependence, and abandonment.",
+    "url": "https://db.arabpsychology.com/scales/attachment-style-measure/",
+    "search_text": "attachment style measure secure avoidant anxious adult attachment closeness trust dependence abandonment simpson"
+  },
+  {
+    "construct": "Attachment",
+    "year": "—",
+    "name": "Adult Attachment",
+    "description": "A self-report attachment measure assessing secure, preoccupied, and fearful patterns in close relationships, including comfort with closeness, dependence, and trust.",
+    "url": "https://db.arabpsychology.com/scales/adult-attachment/",
+    "search_text": "adult attachment secure preoccupied fearful relationships closeness dependence trust"
+  },
+  {
+    "construct": "Attachment",
+    "year": "1996",
+    "name": "Adult Attachment Scale — Revised (AAS-R)",
+    "description": "A revised adult attachment questionnaire assessing comfort with closeness, ability to depend on others, and anxiety about rejection or abandonment in romantic relationships.",
+    "url": "https://db.arabpsychology.com/scales/adult-attachment-scale-revised/",
+    "search_text": "adult attachment scale revised aas r collins closeness dependence anxiety rejection abandonment romantic relationships"
+  },
+  {
+    "construct": "Attachment",
+    "year": "1997",
+    "name": "Measure of Attachment Qualities (MAQ)",
+    "description": "The Measure of Attachment Qualities (MAQ), published by Carver in 1997, is a 14-item self-report instrument designed to assess dimensional aspects of adult attachment. Factor analysis identifies four primary dimensions: Avoidance, Security, Ambivalence-Worry, and Ambivalence-Merger.",
+    "url": "https://db.arabpsychology.com/scales/measure-of-attachment-qualities/",
+    "search_text": "measure attachment qualities maq carver adult attachment security ambivalence worry merger",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Gratitude",
+    "year": "—",
+    "name": "Gratitude Questionnaire — Six Item Form (GQ-6)",
+    "description": "The Gratitude Questionnaire-Six Item Form (GQ-6) is a widely utilized brief self-report inventory designed to assess individual differences in dispositional gratitude. Developed by McCullough, Emmons, and Tsang, it consists of six items rated on a 7-point Likert scale.",
+    "url": "https://db.arabpsychology.com/scales/the-gratitude-questionnaire-six-item-form-gq-6/",
+    "search_text": "gratitude questionnaire six item gq6 gratitude appreciation thankful grateful positive psychology",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Self-efficacy",
+    "year": "—",
+    "name": "Self-Efficacy and Externality Scales (I-SEE)",
+    "description": "The Self-Efficacy and Externality Scales (I-SEE) is a 32-item psychometric instrument developed primarily by G. Krampen. It measures generalized control beliefs by differentiating internal control and perceived competence from external control involving powerful others or chance.",
+    "url": "https://db.arabpsychology.com/scales/self-efficacy-and-externality-scales-i-see/",
+    "search_text": "self efficacy externality scales i see internal control competence powerful others chance locus control",
+    "abstract_source": "arabpsychology"
+  },
+  {
+    "construct": "Aggression",
+    "year": "2001",
+    "name": "Aggression/Victimization Scale",
+    "description": "The Aggression/Victimization Scale is a self-report measure designed to quantify both aggressive behaviors displayed by the respondent and experiences of peer victimization. Its 12-item format asks respondents to report how often specific behaviors occurred during the preceding seven days.",
+    "url": "https://db.arabpsychology.com/scales/aggression-victimization-scale/",
+    "search_text": "aggression victimization scale bullying youth peer conflict physical verbal relational aggression victimization",
+    "abstract_source": "arabpsychology"
+  }
+];
+
+</script><script>
+  const measureData = Array.isArray(window.MEASURES) ? window.MEASURES : [];
+  const resultsMount = document.getElementById('results');
+  const emptyState = document.getElementById('empty');
+
+  function escapeAttr(value){
+    return String(value ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  function escapeText(value){
+    return String(value ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  const ITEM_WORDS = {
+    one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+    eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
+    twenty:20,thirty:30,forty:40,fifty:50
+  };
+
+  function extractItemCount(item){
+    const explicit = item.item_count ?? item.itemCount ?? item.items_count;
+    if(explicit !== null && explicit !== undefined && explicit !== ''){
+      const n = Number(explicit);
+      if(Number.isFinite(n) && n > 0) return n;
+    }
+    const source = `${item.name || ''} ${item.description || ''}`.toLowerCase();
+    const numeric = source.match(/\b(\d+)\s*[- ]?item\b/);
+    if(numeric) return Number(numeric[1]);
+    const word = source.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty)\s+item\b/);
+    if(word) return ITEM_WORDS[word[1]] || null;
+    return null;
+  }
+
+  function deriveAge(item){
+    const text = normalizeText(`${item.name} ${item.description} ${item.search_text}`);
+    if(/older adult|older people|elderly|geriatric|ageing|aging/.test(text)) return ['65+'];
+    if(/baby|infant|toddler/.test(text)) return ['0–2'];
+    if(/preschool|early childhood/.test(text)) return ['3–5'];
+    if(/child version|children|child|school age/.test(text)) return ['3–5','6–11'];
+    if(/adolescent|teen|youth/.test(text)) return ['12–17'];
+    if(/young adult|college|university student/.test(text)) return ['18–25'];
+    if(/adult|romantic relationship|workplace|employee/.test(text)) return ['18–25','26–39','40–64'];
+    return ['0–2','3–5','6–11','12–17','18–25','26–39','40–64','65+'];
+  }
+
+  function derivePopulation(item){
+    const text = normalizeText(`${item.name} ${item.description} ${item.search_text}`);
+    if(/student|academic|school|university|teacher/.test(text)) return 'Students';
+    if(/parent|parenting|caregiver|family/.test(text)) return 'Parents / caregivers';
+    if(/workplace|employee|occupational|supervisor|coworker/.test(text)) return 'Workplace';
+    if(/clinical|patient|ptsd|stress|anxiety|depression/.test(text)) return 'Clinical';
+    return 'General population';
+  }
+
+  function deriveLanguage(item){
+    const text = normalizeText(`${item.name} ${item.description} ${item.search_text}`);
+    if(/arabic|arab/.test(text)) return 'Arabic';
+    if(/spanish|espanol/.test(text)) return 'Spanish';
+    if(/french|francais/.test(text)) return 'French';
+    if(/german|deutsch/.test(text)) return 'German';
+    if(/chinese|mandarin/.test(text)) return 'Chinese';
+    if(/japanese/.test(text)) return 'Japanese';
+    return item.language || 'English';
+  }
+
+
+  function deriveLength(item){
+    const count = extractItemCount(item);
+    if(count == null) return 'Unknown';
+    if(count <= 10) return 'Short';
+    if(count <= 25) return 'Medium';
+    return 'Long';
+  }
+
+  const AUTHOR_MAP = {
+    'Acceptance and Action Questionnaire (AAQ-II)': 'Bond et al.',
+    'Achievement Goal Questionnaire-Revised (AGQ-R)': 'Elliot & Murayama',
+    'Adult Autism Spectrum Quotient (AQ-10) — Self-administered': 'Allison et al.',
+    'Meaning in Life Questionnaire (MLQ)': 'Steger et al.',
+    'Psychological Well-Being Scale (SPWB)': 'Ryff',
+    'Subjective Happiness Scale (SHS)': 'Lyubomirsky & Lepper',
+    'PTSD Checklist 5 (PCL-5)': 'Weathers et al.',
+    'Purpose in Life Test (PIL)': 'Crumbaugh & Maholick',
+    'Abbreviated Technology Anxiety Scale (ATAS)': 'Rosen et al.',
+    'ABC Connectedness to Nature Scale (ABC-CNS)': 'Pasca et al.',
+    'Positive and Negative Affect Schedule (PANAS)': 'Watson et al.',
+    'Relationship Assessment Scale (RAS)': 'Hendrick',
+    'Satisfaction with Life Scale (SWLS)': 'Diener et al.',
+    'Resilience Scale (RS)': 'Wagnild & Young',
+    'Social Support Questionnaire (SSQ)': 'Sarason et al.',
+    'UCLA Loneliness Scale': 'Russell et al.',
+    'Emotion Regulation Questionnaire (ERQ)': 'Gross & John',
+    'Hope Scale': 'Snyder et al.',
+    'Toronto Empathy Questionnaire (TEQ)': 'Spreng et al.',
+    'Gratitude Questionnaire — Six Item Form (GQ-6)': 'McCullough et al.'
+  };
+
+  const DEMO_AUTHOR_POOL = [
+    'Smith et al.','Johnson et al.','Lee et al.','Brown et al.','Garcia et al.',
+    'Wilson et al.','Anderson et al.','Martinez et al.','Taylor et al.','Clark et al.'
+  ];
+
+  function stableDemoNumber(value){
+    let hash = 0;
+    const str = String(value || '');
+    for(let i=0;i<str.length;i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    return Math.abs(hash);
+  }
+
+  function deriveAuthor(item){
+    return item.author || item.authors || AUTHOR_MAP[item.name] || DEMO_AUTHOR_POOL[stableDemoNumber(item.name) % DEMO_AUTHOR_POOL.length];
+  }
+
+  function itemCountNumber(item){
+    const count = extractItemCount(item);
+    const demoCount = [6,8,10,12,15,18,20,24,30,36,40][stableDemoNumber(item.name + 'items') % 11];
+    return count == null ? demoCount : count;
+  }
+
+  function formatItemCount(item){
+    const finalCount = itemCountNumber(item);
+    return `${finalCount} ${finalCount === 1 ? 'item' : 'items'}`;
+  }
+
+  function citationNumber(item){
+    const raw = item.citation_count ?? item.citations;
+    if(raw !== null && raw !== undefined && raw !== '') return Number(raw) || 0;
+    const year = Number(item.year);
+    const ageBoost = Number.isFinite(year) ? Math.max(0, 2026 - year) * 42 : 420;
+    return 45 + (stableDemoNumber(item.name + 'citations') % 1600) + ageBoost;
+  }
+
+  function formatCitationCount(item){
+    return `${citationNumber(item).toLocaleString()} citations`;
+  }
+
+  const decoratedMeasures = measureData.map(item => ({
+    ...item,
+    meta: {
+      citationNumber: citationNumber(item),
+      citations: formatCitationCount(item),
+      author: deriveAuthor(item),
+      itemNumber: itemCountNumber(item),
+      items: formatItemCount(item)
+    },
+    facets: {
+      population: derivePopulation(item),
+      age: deriveAge(item),
+      instrument: deriveInstrumentType(item),
+      administration: deriveAdministration(item),
+      length: deriveLength(item),
+      language: deriveLanguage(item)
+    }
+  }));
+
+  function pillIcon(type){
+    const icons = {
+      citations:'<i class="ph-bold ph-quotes" aria-hidden="true"></i>',
+      author:'<i class="ph-bold ph-user" aria-hidden="true"></i>',
+      items:'<i class="ph-bold ph-list-numbers" aria-hidden="true"></i>'
+    };
+    return icons[type] || '';
+  }
+
+  function renderMeasureRows(){
+    const markup = decoratedMeasures.map(item => {
+      const searchText = item.search_text || [item.name,item.construct,item.description].filter(Boolean).join(' ');
+      return `<article class="result" data-construct="${escapeAttr(item.construct)}" data-population="${escapeAttr(item.facets.population)}" data-age="${escapeAttr(item.facets.age.join('|'))}" data-instrument="${escapeAttr(item.facets.instrument)}" data-administration="${escapeAttr(item.facets.administration)}" data-length="${escapeAttr(item.facets.length)}" data-language="${escapeAttr(item.facets.language)}" data-citations="${escapeAttr(item.meta.citationNumber)}" data-text="${escapeAttr(searchText)}">
+        <div class="meta"><div class="construct">${escapeText(item.construct)}</div><div class="date">${escapeText(item.year || '—')}</div></div>
+        <div class="measure"><a class="measure-title-link" href="${escapeAttr(item.url)}" data-measure-name="${escapeAttr(item.name)}"><h2 class="measure-title">${escapeText(item.name)}</h2></a><div class="measure-desc-wrap"><p class="measure-desc">${escapeText(item.description)}</p><button type="button" class="abstract-more" hidden aria-expanded="false"><span class="abstract-more-label">Show more</span><i class="ph-bold ph-caret-down" aria-hidden="true"></i></button></div><div class="measure-meta"><span class="measure-pill" title="Prototype placeholder metadata"><span class="measure-pill-icon">${pillIcon('author')}</span>${escapeText(item.meta.author)}</span><span class="measure-pill" title="Prototype placeholder metadata"><span class="measure-pill-icon">${pillIcon('items')}</span><span><span class="measure-pill-number">${escapeText(item.meta.itemNumber)}</span> ${item.meta.itemNumber === 1 ? 'item' : 'items'}</span></span><span class="measure-pill" title="Prototype placeholder metadata"><span class="measure-pill-icon">${pillIcon('citations')}</span><span><span class="measure-pill-number">${escapeText(item.meta.citationNumber.toLocaleString())}</span> citations</span></span></div></div>
+      </article>`;
+    }).join('');
+    resultsMount.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderMeasureRows();
+
+  const detailView = document.getElementById('detailView');
+  const detailContent = document.getElementById('detailContent');
+  const detailBack = document.getElementById('detailBack');
+  let detailScrollHandler = null;
+
+  const mlqDetail = {
+    name:'Meaning in Life Questionnaire',
+    authors:'Michael F. Steger, Patricia Frazier, Shigehiro Oishi, Marcel Kaler',
+    year:'2006',
+    abstract:[
+      'The Meaning in Life Questionnaire (MLQ) is a 10-item measure developed to assess two distinct dimensions of meaning in life: Presence of Meaning and Search for Meaning. Presence reflects the extent to which people experience their lives as meaningful, purposeful, and significant, while Search reflects active efforts to find or deepen meaning. The measure uses a 7-point response format and is widely used in positive, existential, and clinical psychology research.'
+    ],
+    citation:'Steger, M. F., Frazier, P., Oishi, S., & Kaler, M. (2006). The meaning in life questionnaire: Assessing the presence of and search for meaning in life. Journal of Counseling Psychology, 53(1), 80–93. https://doi.org/10.1037/0022-0167.53.1.80',
+    sourceUrl:'https://doi.org/10.1037/0022-0167.53.1.80',
+    instruction:'Think briefly about what gives your life a sense of importance and significance. Respond to each statement as honestly and accurately as you can. These questions are subjective, so there are no right or wrong answers.',
+    reverseItems:[9],
+    subscales:{
+      'Presence of Meaning':[1,4,5,6,9],
+      'Search for Meaning':[2,3,7,8,10]
+    },
+    items:[
+      'I understand my life’s meaning.',
+      'I am looking for something that makes my life feel meaningful.',
+      'I am always looking to find my life’s purpose.',
+      'My life has a clear sense of purpose.',
+      'I have a good sense of what makes my life meaningful.',
+      'I have discovered a satisfying life purpose.',
+      'I am always searching for something that makes my life feel significant.',
+      'I am seeking a purpose or mission for my life.',
+      'My life has no clear purpose.',
+      'I am searching for meaning in my life.'
+    ],
+    scoring:[
+      {title:'Presence of Meaning',text:'Sum items 1, 4, 5, 6, and 9. Item 9 is reverse-coded before calculating the subscale score.'},
+      {title:'Search for Meaning',text:'Sum items 2, 3, 7, 8, and 10. Higher scores reflect a stronger active search for meaning.'}
+    ],
+    evidence:{
+      presenceAlpha:'.82–.86',
+      searchAlpha:'.86–.87',
+      factor:'Two-factor structure',
+      validity:[
+        {type:'Convergent',text:'Presence relates positively to life satisfaction, positive emotion, and several indicators of psychological well-being.'},
+        {type:'Discriminant',text:'Presence is distinguishable from related meaning measures and from Search for Meaning rather than collapsing into a single construct.'},
+        {type:'Criterion',text:'',subtypes:[{title:'Concurrent',text:'Presence showed expected relationships with well-being and distress measures in the original validation studies.'},{title:'Predictive',text:'Predictive validity was not established in the original validation study.'}]}
+      ]
+    }
+  };
+
+  function detailFacts(item, isMlq){
+    const age = (item.facets.age || [])[0] || '—';
+    const population = Array.isArray(item.facets.population) ? item.facets.population.join(', ') : (item.facets.population || 'Population');
+    const language = Array.isArray(item.facets.language) ? item.facets.language[0] : (item.facets.language || '—');
+    return [
+      {label:'Length', value:isMlq ? '10' : String(item.meta.itemNumber || '—'), sub:'Items'},
+      {label:'Structure', value:isMlq ? '2' : '—', sub:'Subscales'},
+      {label:'Response', value:isMlq ? '7-point' : '—', sub:'Response scale'},
+      {label:'Age', value:isMlq ? '14+' : age, sub:'Age'},
+      {label:'Language', value:isMlq ? 'EN' : language, sub:'Language'}
+    ];
+  }
+
+  function relatedFor(item){
+    const pool = decoratedMeasures.filter(x => x.name !== item.name);
+    const same = pool.filter(x => x.construct === item.construct);
+    const broader = pool.filter(x => /meaning|purpose|well-being|happiness|life satisfaction/i.test(`${x.construct} ${x.name}`));
+    const seen = new Set();
+    return [...same,...broader,...pool]
+      .filter(x=>{if(seen.has(x.name)) return false;seen.add(x.name);return true})
+      .sort((a,b)=>Number(Boolean(b.year))-Number(Boolean(a.year)))
+      .slice(0,6);
+  }
+
+
+  function openMeasureDetail(item){
+    const isMlq = /Meaning in Life Questionnaire/i.test(item.name);
+    const d = isMlq ? mlqDetail : null;
+    const facts = detailFacts(item,isMlq);
+    const about = d ? d.abstract : [item.description || ''];
+    const citationText = d ? d.citation : `${item.meta.author}${item.year ? ` (${item.year})` : ''}. ${item.name}.`;
+    const citationUrl = d ? d.sourceUrl : item.url;
+    const related = relatedFor(item);
+    detailContent.innerHTML = `
+      <header class="detail-hero">
+        <h1 class="detail-title">${escapeText(item.name).replace(/\s+\(([^)]+)\)$/u,'&nbsp;($1)')}</h1>
+        <div class="detail-meta-row">
+          <div class="detail-citation">${escapeText(d ? d.authors : item.meta.author)}${item.year ? ` · ${escapeText(item.year)}` : ''}</div>
+        </div>
+      </header>
+      <div class="fact-strip">${facts.map(f=>`<div class="fact"><div class="fact-label">${escapeText(f.label)}</div><div class="fact-value">${escapeText(f.value)}</div><div class="fact-sub">${escapeText(f.sub)}</div></div>`).join('')}</div>
+      <div class="detail-body">
+        <main class="detail-main">
+          <section class="detail-section" id="detail-instructions" data-detail-section="instructions"><h2 class="detail-section-title"><i class="ph-bold ph-file-text" aria-hidden="true"></i><span>Instructions</span></h2><div>${d?`<p class="instruction-copy">${escapeText(d.instruction)}</p>`:`<div class="detail-placeholder">Detailed administration instructions have not yet been mapped into this prototype for this measure.</div>`}</div></section>
+          <section class="detail-section" id="detail-response" data-detail-section="response"><h2 class="detail-section-title"><i class="ph-bold ph-sliders-horizontal" aria-hidden="true"></i><span>Response scale</span></h2><div>${d?`<div class="survey-preview"><div class="survey-scale">${[['1','Absolutely untrue'],['2','Mostly untrue'],['3','Somewhat untrue'],['4','Neither true nor false'],['5','Somewhat true'],['6','Mostly true'],['7','Absolutely true']].map(([n,l])=>`<div class="survey-choice"><span class="survey-number">${n}</span><span class="survey-label">${l}</span></div>`).join('')}</div></div>`:`<div class="detail-placeholder">Response options have not yet been mapped into this prototype for this measure.</div>`}</div></section>
+          <section class="detail-section" id="detail-items" data-detail-section="items"><h2 class="detail-section-title"><i class="ph-bold ph-list-numbers" aria-hidden="true"></i><span>Items</span></h2><div>${d?`<ol class="item-list">${d.items.map((x,idx)=>{const n=idx+1; const subscale=Object.entries(d.subscales||{}).find(([,items])=>items.includes(n))?.[0]; return `<li><span class="item-text-wrap"><span class="item-text">${escapeText(x)}</span><span class="item-meta-row">${subscale ? `<span class="item-subscale-pill">${escapeText(subscale)}</span>` : ''}${Array.isArray(d.reverseItems) && d.reverseItems.includes(n) ? `<span class="reverse-score-pill"><i class="ph-bold ph-arrow-counter-clockwise" aria-hidden="true"></i><span>Reverse scored</span></span>` : ''}</span></span></li>`}).join('')}</ol>`:`<div class="detail-placeholder">Full item text has not yet been mapped into this prototype for this measure.</div>`}</div></section>
+          <section class="detail-section" id="detail-scoring" data-detail-section="scoring"><h2 class="detail-section-title"><i class="ph-bold ph-calculator" aria-hidden="true"></i><span>Scoring</span></h2><div>${d?`<div class="scoring-list"><div class="scoring-item"><strong>Presence of Meaning:</strong> Items 1, 4, 5, 6, and 9. Item 9 is reverse-scored.</div><div class="scoring-item"><strong>Search for Meaning:</strong> Items 2, 3, 7, 8, and 10.</div></div><p class="scoring-note">Calculate the two subscales separately by summing their items.</p>`:`<div class="detail-placeholder">Full scoring instructions have not yet been mapped into this prototype for this measure.</div>`}</div></section>
+          <section class="detail-section" id="detail-evidence" data-detail-section="evidence"><h2 class="detail-section-title"><i class="ph-bold ph-chart-line-up" aria-hidden="true"></i><span>Reliability &amp; validity</span></h2><div>${d?`<div class="spec-table"><div class="internal-consistency-block"><div class="psychometric-pair">
+<div class="reliability-card" data-range-low=".82" data-range-high=".86"><div class="reliability-card-head"><div class="reliability-title-group"><div class="reliability-kicker">Internal consistency</div><div class="psychometric-name">Presence of Meaning Subscale</div></div><div class="reliability-info-wrap"><button class="reliability-info" type="button" aria-label="Show source for internal consistency evidence"><i class="ph-bold ph-info" aria-hidden="true"></i></button><div class="reliability-source-popover" role="tooltip"><strong class="reliability-source-label">Source</strong><a class="reliability-source-link" href="https://doi.org/10.1037/0022-0167.53.1.80" target="_blank" rel="noopener noreferrer">Steger, M. F., Frazier, P., Oishi, S., & Kaler, M. (2006). The Meaning in Life Questionnaire: Assessing the presence of and search for meaning in life. <em>Journal of Counseling Psychology, 53</em>(1), 80–93.</a></div></div></div><div class="reliability-content"><div class="reliability-main"><div class="reliability-scale" style="--marker:67.8%;--active-fill:20%"><div class="reliability-current"><div class="alpha-line"><span class="alpha-symbol">α</span><span class="alpha-value">${escapeText(d.evidence.presenceAlpha)}</span></div><div class="reliability-status">Strong consistency</div></div><div class="reliability-band red is-complete"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-band yellow is-complete"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-band green is-active"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-axis"><div class="reliability-axis-segment"><span>.00</span><span>.70</span></div><div class="reliability-axis-segment"><span></span><span>.80</span></div><div class="reliability-axis-segment"><span></span><span>1.00</span></div></div></div></div></div><div class="reliability-explainer"><strong>What this means</strong><span>The Presence items showed strong internal consistency across the original samples, with alpha values ranging from ${escapeText(d.evidence.presenceAlpha)}. Higher alpha indicates that the items tend to respond consistently as a group.</span></div></div>
+<div class="reliability-card" data-range-low=".86" data-range-high=".87"><div class="reliability-card-head"><div class="reliability-title-group"><div class="reliability-kicker">Internal consistency</div><div class="psychometric-name">Search for Meaning Subscale</div></div><div class="reliability-info-wrap"><button class="reliability-info" type="button" aria-label="Show source for internal consistency evidence"><i class="ph-bold ph-info" aria-hidden="true"></i></button><div class="reliability-source-popover" role="tooltip"><strong class="reliability-source-label">Source</strong><a class="reliability-source-link" href="https://doi.org/10.1037/0022-0167.53.1.80" target="_blank" rel="noopener noreferrer">Steger, M. F., Frazier, P., Oishi, S., & Kaler, M. (2006). The Meaning in Life Questionnaire: Assessing the presence of and search for meaning in life. <em>Journal of Counseling Psychology, 53</em>(1), 80–93.</a></div></div></div><div class="reliability-content"><div class="reliability-main"><div class="reliability-scale" style="--marker:72.8%;--active-fill:32.5%"><div class="reliability-current"><div class="alpha-line"><span class="alpha-symbol">α</span><span class="alpha-value">${escapeText(d.evidence.searchAlpha)}</span></div><div class="reliability-status">Strong consistency</div></div><div class="reliability-band red is-complete"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-band yellow is-complete"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-band green is-active"><span class="reliability-band-line"><span class="reliability-band-fill"></span></span></div><div class="reliability-axis"><div class="reliability-axis-segment"><span>.00</span><span>.70</span></div><div class="reliability-axis-segment"><span></span><span>.80</span></div><div class="reliability-axis-segment"><span></span><span>1.00</span></div></div></div></div></div><div class="reliability-explainer"><strong>What this means</strong><span>The Search items also showed strong internal consistency across the original samples, with alpha values ranging from ${escapeText(d.evidence.searchAlpha)}. Higher alpha indicates that the items tend to respond consistently as a group.</span></div></div>
+</div></div><div class="factor-structure-card"><div class="factor-title-group"><div class="factor-kicker">Factor structure</div><div class="factor-card-title">Two-factor model</div></div><div class="factor-paper"><svg class="factor-paper-svg" viewBox="0 0 1020 470" role="img" aria-label="Two-factor model for the Meaning in Life Questionnaire"><defs><marker id="factorArrowHead" markerWidth="9" markerHeight="9" refX="7.3" refY="4.5" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L9,4.5 L0,9 Z" fill="#222"></path></marker><marker id="factorArrowHeadStart" markerWidth="9" markerHeight="9" refX="7.3" refY="4.5" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L9,4.5 L0,9 Z" fill="#222"></path></marker></defs><path class="factor-arrow factor-correlation" d="M360 95 C435 40 580 40 655 95" marker-start="url(#factorArrowHeadStart)" marker-end="url(#factorArrowHead)"></path><ellipse class="factor-latent" cx="270" cy="145" rx="145" ry="72"></ellipse><ellipse class="factor-latent" cx="745" cy="145" rx="145" ry="72"></ellipse><text x="270" y="132" text-anchor="middle" font-size="25" font-weight="500"><tspan x="270" dy="0">Presence of</tspan><tspan x="270" dy="31">Meaning</tspan></text><text x="745" y="132" text-anchor="middle" font-size="25" font-weight="500"><tspan x="745" dy="0">Search for</tspan><tspan x="745" dy="31">Meaning</tspan></text><path class="factor-arrow" d="M176 198 L75 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M220 211 L170 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M270 217 L265 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M320 211 L360 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M364 198 L455 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M651 198 L585 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M695 211 L680 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M745 217 L775 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M795 211 L870 300" marker-end="url(#factorArrowHead)"></path><path class="factor-arrow" d="M839 198 L965 300" marker-end="url(#factorArrowHead)"></path><rect class="factor-item-box" x="20" y="305" width="85" height="66"></rect><text x="62.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 1</text><rect class="factor-item-box" x="115" y="305" width="85" height="66"></rect><text x="157.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 4</text><rect class="factor-item-box" x="210" y="305" width="85" height="66"></rect><text x="252.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 5</text><rect class="factor-item-box" x="305" y="305" width="85" height="66"></rect><text x="347.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 6</text><rect class="factor-item-box" x="400" y="305" width="85" height="66"></rect><text x="442.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 9</text><rect class="factor-item-box" x="530" y="305" width="85" height="66"></rect><text x="572.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 2</text><rect class="factor-item-box" x="625" y="305" width="85" height="66"></rect><text x="667.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 3</text><rect class="factor-item-box" x="720" y="305" width="85" height="66"></rect><text x="762.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 7</text><rect class="factor-item-box" x="815" y="305" width="85" height="66"></rect><text x="857.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 8</text><rect class="factor-item-box" x="910" y="305" width="85" height="66"></rect><text x="952.5" y="346" text-anchor="middle" font-size="16" font-weight="500">Item 10</text></svg><div class="factor-note"><span class="factor-note-heading">What this means</span><p class="factor-note-copy">The MLQ measures two related dimensions of meaning in life: <strong>Presence of Meaning</strong> and <strong>Search for Meaning</strong>. Each is measured by five separate items, so the two dimensions are scored independently even though they are related.</p></div></div></div><div class="validity-card"><div class="validity-card-head"><div class="validity-kicker">Validity</div><div class="validity-card-title">Evidence across related constructs</div></div><div class="validity-sections">${d.evidence.validity.map(v=>{const icon=v.type==='Convergent'?'ph-arrows-in-line-horizontal':v.type==='Discriminant'?'ph-arrows-out-line-horizontal':v.type==='Criterion'?'ph-target':'ph-check-circle';const subtypes=v.subtypes?.length?`<div class="criterion-subtypes">${v.subtypes.map(s=>`<div class="criterion-subtype"><p class="criterion-subtype-text"><strong>${escapeText(s.title)}:</strong> ${escapeText(s.text)}</p></div>`).join('')}</div>`:`<p class="validity-section-text">${escapeText(v.text)}</p>`;return `<div class="validity-section"><div class="validity-title-row"><div class="validity-icon" aria-hidden="true"><i class="ph ${icon}"></i></div><div class="validity-section-title">${escapeText(v.type)}</div></div>${subtypes}</div>`}).join('')}</div></div>`:`<div class="detail-placeholder">Psychometric evidence has not yet been mapped into this prototype for this measure.</div>`}</div></section>
+          <section class="detail-section" id="detail-related" data-detail-section="related"><h2 class="detail-section-title"><span>Related measures</span></h2><div class="related-list">${related.map(x=>`<article class="related-result"><div class="meta"><div class="construct">${escapeText(x.construct)}</div><div class="date">${escapeText(x.year || '—')}</div></div><div class="measure"><a class="measure-title-link" href="${escapeAttr(x.url)}" data-related-name="${escapeAttr(x.name)}"><h3 class="measure-title">${escapeText(x.name)}</h3></a><div class="measure-desc-wrap"><p class="measure-desc">${escapeText(x.description)}</p></div><div class="measure-meta"><span class="measure-pill"><span class="measure-pill-icon">${pillIcon('author')}</span>${escapeText(x.meta.author)}</span><span class="measure-pill"><span class="measure-pill-icon">${pillIcon('items')}</span><span><span class="measure-pill-number">${escapeText(x.meta.itemNumber)}</span> ${x.meta.itemNumber === 1 ? 'item' : 'items'}</span></span><span class="measure-pill"><span class="measure-pill-icon">${pillIcon('citations')}</span><span><span class="measure-pill-number">${escapeText(x.meta.citationNumber.toLocaleString())}</span> citations</span></span></div></div></article>`).join('')}</div><div class="related-nav"><button class="related-nav-button related-prev" type="button" aria-label="Previous related measure"><i class="ph-bold ph-caret-left" aria-hidden="true"></i></button><button class="related-nav-button related-next" type="button" aria-label="Next related measure"><i class="ph-bold ph-caret-right" aria-hidden="true"></i></button></div></section>
+        </main>
+      </div>
+    `;
+    document.body.classList.add('detail-open');
+    detailView.setAttribute('aria-hidden','false');
+    detailView.scrollTop = 0;
+    history.replaceState(null,'',`#measure=${encodeURIComponent(item.name)}`);
+    detailContent.querySelectorAll('[data-related-name]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const next=decoratedMeasures.find(x=>x.name===a.dataset.relatedName);if(next) openMeasureDetail(next);}));
+    const relatedTrack=detailContent.querySelector('.related-list');
+    const relatedCards=[...detailContent.querySelectorAll('.related-result')];
+    const relatedPrev=detailContent.querySelector('.related-prev');
+    const relatedNext=detailContent.querySelector('.related-next');
+    if(relatedTrack&&relatedCards.length&&relatedPrev&&relatedNext){
+      const getIndex=()=>{
+        const left=relatedTrack.scrollLeft;
+        let best=0,bestDist=Infinity;
+        relatedCards.forEach((card,i)=>{const d=Math.abs(card.offsetLeft-left-relatedTrack.offsetLeft);if(d<bestDist){bestDist=d;best=i;}});
+        return best;
+      };
+      const getVisibleRange=()=>{
+        const trackRect=relatedTrack.getBoundingClientRect();
+        const visible=relatedCards
+          .map((card,i)=>({i,rect:card.getBoundingClientRect()}))
+          .filter(({rect})=>rect.right>trackRect.left+8&&rect.left<trackRect.right-8)
+          .map(({i})=>i);
+        if(!visible.length){const i=getIndex();return {first:i,last:i};}
+        return {first:visible[0],last:visible[visible.length-1]};
+      };
+      const updateRelatedNav=()=>{
+        const {first,last}=getVisibleRange();
+        relatedPrev.disabled=first===0;
+        relatedNext.disabled=last===relatedCards.length-1;
+
+        const trackRect=relatedTrack.getBoundingClientRect();
+        const edgeTolerance=5;
+        relatedCards.forEach((card,i)=>{
+          card.classList.remove('edge-divider-hidden');
+          if(i===0) return;
+          const dividerX=card.getBoundingClientRect().left;
+          const onLeftEdge=Math.abs(dividerX-trackRect.left)<=edgeTolerance;
+          const onRightEdge=Math.abs(dividerX-trackRect.right)<=edgeTolerance;
+          if(onLeftEdge||onRightEdge) card.classList.add('edge-divider-hidden');
+        });
+      };
+      const goToRelated=i=>{
+        const target=relatedCards[Math.max(0,Math.min(relatedCards.length-1,i))];
+        target?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
+      };
+      relatedPrev.addEventListener('click',()=>goToRelated(getIndex()-1));
+      relatedNext.addEventListener('click',()=>goToRelated(getIndex()+1));
+      relatedTrack.addEventListener('scroll',()=>requestAnimationFrame(updateRelatedNav),{passive:true});
+      requestAnimationFrame(updateRelatedNav);
+    }
+
+    const citationCopy = detailContent.querySelector('.citation-copy');
+    const citationLink = detailContent.querySelector('.detail-citation');
+    if(citationCopy && citationLink){
+      citationCopy.addEventListener('click', async ()=>{
+        const citation = citationLink.dataset.citationText || citationLink.textContent.trim();
+        try { await navigator.clipboard.writeText(citation); } catch(_) {
+          const ta=document.createElement('textarea');ta.value=citation;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+        }
+        citationCopy.classList.add('copied');
+        citationCopy.innerHTML='<i class="ph-bold ph-check" aria-hidden="true"></i>';
+        citationCopy.setAttribute('aria-label','Citation copied');
+        setTimeout(()=>{if(!citationCopy.isConnected)return;citationCopy.classList.remove('copied');citationCopy.innerHTML='<i class="ph-bold ph-copy" aria-hidden="true"></i>';citationCopy.setAttribute('aria-label','Copy citation');},1400);
+      });
+    }
+    const navLinks = [...detailContent.querySelectorAll('[data-detail-target]')];
+    const sections = [...detailContent.querySelectorAll('[data-detail-section]')];
+    const setActiveSection = id => navLinks.forEach(link => link.classList.toggle('active', link.dataset.detailTarget === id));
+    navLinks.forEach(link=>link.addEventListener('click',()=>{
+      const section = detailContent.querySelector(`[data-detail-section="${link.dataset.detailTarget}"]`);
+      if(!section) return;
+      const top = section.getBoundingClientRect().top - detailView.getBoundingClientRect().top + detailView.scrollTop - 24;
+      detailView.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+      setActiveSection(link.dataset.detailTarget);
+    }));
+    if(detailScrollHandler) detailView.removeEventListener('scroll', detailScrollHandler);
+    detailScrollHandler = ()=>{
+      const marker = detailView.getBoundingClientRect().top + 110;
+      let current = sections[0]?.dataset.detailSection;
+      sections.forEach(section=>{ if(section.getBoundingClientRect().top <= marker) current = section.dataset.detailSection; });
+      if(current) setActiveSection(current);
+    };
+    detailView.addEventListener('scroll',detailScrollHandler,{passive:true});
+  }
+
+  document.querySelectorAll('.measure-title-link').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault();
+    const item = decoratedMeasures.find(x => x.name === a.dataset.measureName);
+    if(item) openMeasureDetail(item);
+  }));
+  detailBack.addEventListener('click',()=>{
+    document.body.classList.remove('detail-open');
+    detailView.setAttribute('aria-hidden','true');
+    history.replaceState(null,'',location.pathname + location.search);
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape' && document.body.classList.contains('detail-open')) detailBack.click();});
+
+  function setupAbstractPreviews(){
+    const wraps = [...document.querySelectorAll('.measure-desc-wrap')];
+    const refresh = () => wraps.forEach(wrap => {
+      const desc = wrap.querySelector('.measure-desc');
+      const more = wrap.querySelector('.abstract-more');
+      if (!desc.classList.contains('expanded')) {
+        more.hidden = !(desc.scrollHeight > desc.clientHeight + 1);
+      }
+    });
+    wraps.forEach(wrap => {
+      const desc = wrap.querySelector('.measure-desc');
+      const more = wrap.querySelector('.abstract-more');
+      const moreLabel = more.querySelector('.abstract-more-label');
+      more.addEventListener('click', () => {
+        const isExpanded = desc.classList.contains('expanded');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const hasGsap = typeof window.gsap !== 'undefined';
+
+        more.hidden = false;
+
+        if (reduceMotion || !hasGsap) {
+          desc.classList.toggle('expanded', !isExpanded);
+          moreLabel.textContent = isExpanded ? 'Show more' : 'Show less';
+          more.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+          return;
+        }
+
+        gsap.killTweensOf(desc);
+        const startHeight = desc.getBoundingClientRect().height;
+        desc.classList.add('animating');
+        desc.style.height = `${startHeight}px`;
+
+        if (!isExpanded) {
+          const targetHeight = desc.scrollHeight;
+          moreLabel.textContent = 'Show less';
+          more.setAttribute('aria-expanded', 'true');
+          gsap.fromTo(desc,
+            {height:startHeight, opacity:.86},
+            {height:targetHeight, opacity:1, duration:.38, ease:'power2.out', onComplete:() => {
+              desc.classList.remove('animating');
+              desc.classList.add('expanded');
+              desc.style.height = '';
+              desc.style.opacity = '';
+            }}
+          );
+        } else {
+          const lineHeight = parseFloat(getComputedStyle(desc).lineHeight) || 23.36;
+          const targetHeight = lineHeight * 2;
+          moreLabel.textContent = 'Show more';
+          more.setAttribute('aria-expanded', 'false');
+          gsap.to(desc, {height:targetHeight, opacity:.88, duration:.32, ease:'power2.inOut', onComplete:() => {
+            desc.classList.remove('animating');
+            desc.classList.remove('expanded');
+            desc.style.height = '';
+            desc.style.opacity = '';
+          }});
+        }
+      });
+    });
+    requestAnimationFrame(refresh);
+    window.addEventListener('load', refresh, { once:true });
+  }
+  setupAbstractPreviews();
+
+  const search = document.getElementById('search');
+  const rows = [...document.querySelectorAll('.result')];
+  const count = document.getElementById('resultCount');
+  const empty = document.getElementById('empty');
+  const loadMoreWrap = document.getElementById('loadMoreWrap');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const PAGE_SIZE = 10;
+  let visibleLimit = PAGE_SIZE;
+  const emptyHeadline = document.getElementById('emptyHeadline');
+  const emptySub = document.getElementById('emptySub');
+  const emptySuggestions = document.getElementById('emptySuggestions');
+  const emptySearchSuggestions = document.getElementById('emptySearchSuggestions');
+  const emptyReset = document.getElementById('emptyReset');
+  const drawer = document.getElementById('drawer');
+  const facetSectionsMount = document.getElementById('facetSections');
+  const suggestions = document.getElementById('suggestions');
+  const suggestionsBackdrop = document.getElementById('suggestionsBackdrop');
+  const suggestionList = document.getElementById('suggestionList');
+  const searchClear = document.getElementById('searchClear');
+  const searchSummary = document.getElementById('searchSummary');
+  const resultStatus = document.querySelector('.result-status');
+  const searchShell = document.querySelector('.search-shell');
+  const sortSegments = [...document.querySelectorAll('.sort-segment')];
+  const sortSegmentsWrap = document.getElementById('sortSegments');
+  const sortIndicator = document.getElementById('sortIndicator');
+  let sortValue = 'newest';
+
+  function updateSortIndicator(animate=true){
+    const active = sortSegments.find(item => item.classList.contains('active')) || sortSegments[0];
+    if(!active || !sortIndicator || !sortSegmentsWrap) return;
+    if(!animate) sortIndicator.style.transition = 'none';
+    const wrapRect = sortSegmentsWrap.getBoundingClientRect();
+    const rect = active.getBoundingClientRect();
+    sortIndicator.style.width = `${rect.width}px`;
+    sortIndicator.style.transform = `translateX(${rect.left - wrapRect.left}px)`;
+    if(!animate){
+      void sortIndicator.offsetWidth;
+      sortIndicator.style.transition = '';
+    }
+  }
+
+
+
+  function deriveInstrumentType(item){
+    const text = normalizeText(`${item.name} ${item.description}`);
+    if(/inventory/.test(text)) return 'Inventory';
+    if(/questionnaire/.test(text)) return 'Questionnaire';
+    if(/checklist/.test(text)) return 'Checklist';
+    if(/schedule/.test(text)) return 'Schedule';
+    if(/test/.test(text)) return 'Test';
+    return 'Scale';
+  }
+
+  function deriveAdministration(item){
+    const text = normalizeText(`${item.name} ${item.description} ${item.search_text}`);
+    if(/interview/.test(text)) return 'Interview';
+    if(/observer|observational|clinician rated|clinician-rated/.test(text)) return 'Observer / clinician';
+    return 'Self-report';
+  }
+
+
+  // PsycTests-inspired facets. Values not explicitly available in our current
+  // prototype dataset are kept conservative rather than presented as verified facts.
+  const facetState = {
+    population:'Any', length:'Any', language:'Any',
+    instrument:'Any', administration:'Any'
+  };
+  let appliedFacetState = { ...facetState };
+
+  const facetMeta = [
+    { key:'population', title:'Population', options:[
+      { value:'Any', label:'Any' },
+      { value:'General population', label:'General', icon:'ph-users-three' },
+      { value:'Students', label:'Students', icon:'ph-graduation-cap' },
+      { value:'Clinical', label:'Clinical', icon:'ph-first-aid-kit' },
+      { value:'Parents / caregivers', label:'Parents', icon:'ph-person-arms-spread' },
+      { value:'Workplace', label:'Workplace', icon:'ph-briefcase' }
+    ]},
+    { key:'age', title:'Age Group', type:'developmental' },
+    { key:'instrument', title:'Instrument Type', options:[
+      { value:'Any', label:'Any' },
+      { value:'Scale', label:'Scale', icon:'ph-sliders-horizontal' },
+      { value:'Questionnaire', label:'Questionnaire', icon:'ph-clipboard-text' },
+      { value:'Inventory', label:'Inventory', icon:'ph-list-checks' },
+      { value:'Checklist', label:'Checklist', icon:'ph-check-square' },
+      { value:'Test', label:'Test', icon:'ph-exam' },
+      { value:'Schedule', label:'Schedule', icon:'ph-calendar-dots' }
+    ]},
+    { key:'administration', title:'Administration Method', options:[
+      { value:'Any', label:'Any' },
+      { value:'Self-report', label:'Self-report', icon:'ph-pencil-simple-line' },
+      { value:'Interview', label:'Interview', icon:'ph-chats-circle' },
+      { value:'Observer / clinician', label:'Observer / clinician', icon:'ph-eye' }
+    ]},
+    { key:'length', title:'Number of Items', options:[
+      { value:'Any', label:'Any' },
+      { value:'Short', label:'1–10 items' },
+      { value:'Medium', label:'11–25 items' },
+      { value:'Long', label:'26+ items' }
+    ]},
+    { key:'language', title:'Language', options:[
+      { value:'Any', label:'Any' },
+      { value:'English', label:'English', script:'A' },
+      { value:'Arabic', label:'Arabic', script:'ع' },
+      { value:'Spanish', label:'Spanish', script:'Ñ' },
+      { value:'French', label:'French', script:'É' },
+      { value:'German', label:'German', script:'Ä' },
+      { value:'Chinese', label:'Chinese', script:'文' },
+      { value:'Japanese', label:'Japanese', script:'あ' }
+    ]}
+  ];
+
+  function filterIcon(name){
+    return name ? `<i class="ph-bold ${name}" aria-hidden="true"></i>` : '';
+  }
+
+  function chevronIcon(){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m6 14 6-6 6 6"></path></svg>';
+  }
+
+  const ageStages = [
+    { value:'Infancy', label:'Infancy', bands:['0–2'], icon:'baby-carriage' },
+    { value:'Childhood', label:'Childhood', bands:['3–5','6–11'], icon:'baby' },
+    { value:'Adolescence', label:'Adolescence', bands:['12–17'], icon:'backpack' },
+    { value:'Adulthood', label:'Adulthood', bands:['18–25','26–39','40–64'], icon:'briefcase' },
+    { value:'Older adulthood', label:'Older adulthood', bands:['65+'], icon:'eyeglasses' }
+  ];
+  const selectedAgeStages = new Set();
+  let appliedAgeStages = new Set();
+
+  function ageStageMarkup(){
+    return `<div class="age-chip-grid">
+      <button type="button" class="age-chip ${selectedAgeStages.size ? '' : 'active'}" data-age-stage="Any" aria-pressed="${selectedAgeStages.size ? 'false' : 'true'}"><span>Any age</span></button>
+      ${ageStages.map(stage=>`<button type="button" class="age-chip ${selectedAgeStages.has(stage.value)?'active':''}" data-age-stage="${escapeAttr(stage.value)}" aria-pressed="${selectedAgeStages.has(stage.value)}"><span class="age-chip-icon"><i class="ph-bold ph-${stage.icon}" aria-hidden="true"></i></span><span>${stage.label}</span></button>`).join('')}
+    </div>`;
+  }
+
+  function renderFacetSections(){
+    facetSectionsMount.innerHTML = facetMeta.map(section => `
+      <section class="facet-section" data-section="${section.key}">
+        <button class="facet-header" type="button" data-toggle="${section.key}">
+          <span class="facet-title">${section.title}</span>
+          <span class="facet-chevron">${chevronIcon()}</span>
+        </button>
+        <div class="facet-body">
+          <div class="facet-body-inner">
+            ${section.type === 'developmental' ? ageStageMarkup() : `<div class="facet-chip-grid">
+              ${section.options.map(option => `
+                <button type="button" class="facet-chip ${option.value === 'Any' ? 'any' : ''} ${facetState[section.key] === option.value ? 'active' : ''}" data-facet="${section.key}" data-value="${escapeAttr(option.value)}">
+                  ${option.value !== 'Any' && option.script ? `<span class="language-glyph" aria-hidden="true">${option.script}</span>` : (option.value !== 'Any' && option.icon ? `<span class="facet-chip-icon">${filterIcon(option.icon)}</span>` : '')}
+                  <span>${option.label}</span>
+                </button>
+              `).join('')}
+            </div>`}
+          </div>
+        </div>
+      </section>
+    `).join('');
+
+    facetSectionsMount.querySelectorAll('[data-toggle]').forEach(button => {
+      button.addEventListener('click', () => {
+        button.closest('.facet-section')?.classList.toggle('collapsed');
+      });
+    });
+
+    facetSectionsMount.querySelectorAll('.facet-chip').forEach(button => {
+      button.addEventListener('click', () => {
+        const facet = button.dataset.facet;
+        const value = button.dataset.value;
+        facetState[facet] = value;
+        renderFacetSections();
+      });
+    });
+
+    facetSectionsMount.querySelectorAll('.age-chip').forEach(button=>button.addEventListener('click',()=>{
+      const value=button.dataset.ageStage;
+      if(value === 'Any') selectedAgeStages.clear();
+      else if(selectedAgeStages.has(value)) selectedAgeStages.delete(value);
+      else selectedAgeStages.add(value);
+      renderFacetSections();
+    }));
+  }
+
+  renderFacetSections();
+
+  const suggestionPool = (() => {
+    const seen = new Set();
+    const items = [];
+    rows.forEach(row => {
+      const construct = row.dataset.construct?.trim();
+      const title = row.querySelector('.measure-title')?.textContent.trim();
+      [construct, title].forEach(label => {
+        if (!label) return;
+        const key = label.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          items.push({ label, key, type: label === construct ? 'construct' : 'measure' });
+        }
+      });
+    });
+    return items;
+  })();
+
+  const defaultSuggestions = [
+    'Autistic traits',
+    'Self-efficacy',
+    'Parenting practices',
+    'Aggression',
+    'Psychological inflexibility'
+  ];
+
+  let committedQuery = '';
+  let committedEffectiveQuery = '';
+  let committedCorrection = null;
+  const RECENT_KEY = 'measureSearchRecentQueries';
+
+  function getRecentSearches(){
+    try{
+      const stored = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      return Array.isArray(stored) ? stored.filter(Boolean).slice(0,6) : [];
+    }catch(e){ return []; }
+  }
+
+  function saveRecentSearch(query){
+    const clean = query.trim();
+    if(!clean) return;
+    const next = [clean, ...getRecentSearches().filter(item => item.toLowerCase() !== clean.toLowerCase())].slice(0,6);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  }
+
+  function removeRecentSearch(query){
+    const next = getRecentSearches().filter(item => item.toLowerCase() !== query.toLowerCase());
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+    updateSuggestions(true);
+  }
+
+  function updateSearchSummary(){
+    if(!committedQuery){
+      searchSummary.classList.remove('on');
+      searchSummary.innerHTML='';
+      return;
+    }
+    let correctionHtml = '';
+    if(committedCorrection && committedCorrection.label && normalizeText(committedCorrection.label) !== normalizeText(committedQuery)){
+      correctionHtml = `<span class="did-you-mean-inline">Did you mean <button type="button" id="didYouMeanButton">“${escapeHtml(committedCorrection.label)}”</button>?</span>`;
+    }
+    searchSummary.innerHTML = correctionHtml;
+    searchSummary.classList.toggle('on', !!correctionHtml);
+    const button = document.getElementById('didYouMeanButton');
+    if(button){
+      button.addEventListener('click',()=>commitSearch(committedCorrection.label, null, true));
+    }
+  }
+
+
+  function normalizeText(value){
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ')
+      .trim();
+  }
+
+  function levenshtein(a,b){
+    if(a===b) return 0;
+    if(!a.length) return b.length;
+    if(!b.length) return a.length;
+    const prev = Array.from({length:b.length+1},(_,i)=>i);
+    for(let i=1;i<=a.length;i++){
+      let last = prev[0];
+      prev[0]=i;
+      for(let j=1;j<=b.length;j++){
+        const old = prev[j];
+        const cost = a[i-1]===b[j-1] ? 0 : 1;
+        prev[j]=Math.min(prev[j]+1, prev[j-1]+1, last+cost);
+        last=old;
+      }
+    }
+    return prev[b.length];
+  }
+
+  function allowedDistance(token){
+    if(token.length <= 4) return 0;
+    if(token.length <= 7) return 1;
+    return 2;
+  }
+
+  function tokenMatches(queryToken, candidateToken){
+    if(queryToken === candidateToken) return true;
+    // Allow useful partial searches, but only from the beginning of a word.
+    if(queryToken.length >= 3 && candidateToken.startsWith(queryToken)) return true;
+    // Typo tolerance is intentionally conservative: similar word length + small edit distance.
+    if(Math.abs(queryToken.length - candidateToken.length) > 1) return false;
+    return levenshtein(queryToken,candidateToken) <= allowedDistance(queryToken);
+  }
+
+  function fuzzyTextMatch(query, text){
+    const q = normalizeText(query);
+    const hay = normalizeText(text);
+    if(!q) return true;
+    if(hay.includes(q)) return true;
+    const qTokens = q.split(/\s+/).filter(Boolean);
+    const hTokens = hay.split(/\s+/).filter(Boolean);
+    return qTokens.every(qt => hTokens.some(ht => tokenMatches(qt,ht)));
+  }
+
+  function fuzzyLabelScore(query,label){
+    const q = normalizeText(query);
+    const l = normalizeText(label);
+    if(!q) return 999;
+    if(l === q) return 0;
+    if(l.startsWith(q)) return 0.15;
+    if(l.includes(q)) return 0.25 + l.indexOf(q)/1000;
+    const qTokens=q.split(/\s+/).filter(Boolean);
+    const lTokens=l.split(/\s+/).filter(Boolean);
+    let total=0;
+    for(const qt of qTokens){
+      let best=Infinity;
+      for(const lt of lTokens){
+        if(qt === lt) best=Math.min(best,0);
+        else if(qt.length >= 3 && lt.startsWith(qt)) best=Math.min(best,0.2);
+        else if(Math.abs(qt.length-lt.length) <= 1) {
+          const d=levenshtein(qt,lt);
+          if(d <= allowedDistance(qt)) best=Math.min(best,d/Math.max(qt.length,lt.length));
+        }
+      }
+      if(best>0.34) return 999;
+      total+=best;
+    }
+    return total/qTokens.length;
+  }
+
+  const correctionVocabulary = (() => {
+    const words = new Set();
+    rows.forEach(row => {
+      const sources = [row.dataset.construct || '', row.querySelector('.measure-title')?.textContent || '', row.dataset.text || ''];
+      sources.forEach(source => normalizeText(source).split(/\s+/).filter(w => w.length >= 3).forEach(w => words.add(w)));
+    });
+    return [...words];
+  })();
+
+  function closestWord(token){
+    const t = normalizeText(token);
+    if(!t || t.length < 3 || correctionVocabulary.includes(t)) return null;
+    let best=null;
+    let bestDistance=Infinity;
+    correctionVocabulary.forEach(word => {
+      if(Math.abs(word.length-t.length) > 1) return;
+      const d=levenshtein(t,word);
+      if(d < bestDistance){ bestDistance=d; best=word; }
+    });
+    return best && bestDistance <= allowedDistance(t) ? best : null;
+  }
+
+  function correctedQuery(query){
+    const parts = query.trim().split(/(\s+)/);
+    let changed=false;
+    const changedWords=[];
+    const out=parts.map(part => {
+      if(/^\s+$/.test(part)) return part;
+      const clean=part.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g,'');
+      if(!clean) return part;
+      const replacement=closestWord(clean);
+      if(!replacement || normalizeText(replacement)===normalizeText(clean)) return part;
+      changed=true;
+      changedWords.push({from:clean,to:replacement});
+      const prefix=part.slice(0,part.indexOf(clean));
+      const suffix=part.slice(part.indexOf(clean)+clean.length);
+      return prefix + replacement + suffix;
+    });
+    return changed ? {label:out.join(''), changedWords} : null;
+  }
+
+
+  const AGE_BAND_BOUNDS = {'0–2':[0,2],'3–5':[3,5],'6–11':[6,11],'12–17':[12,17],'18–25':[18,25],'26–39':[26,39],'40–64':[40,64],'65+':[65,100]};
+  function rowAgeBounds(row){
+    const bands=(row.dataset.age || '').split('|').filter(Boolean).map(b=>AGE_BAND_BOUNDS[b]).filter(Boolean);
+    if(!bands.length) return [0,100];
+    return [Math.min(...bands.map(b=>b[0])), Math.max(...bands.map(b=>b[1]))];
+  }
+
+  const EMPTY_FEATURED_SEARCHES = ['Meaning in life','Well-being','Social support'];
+  const EMPTY_OTHER_SEARCHES = ['Resilience','Self-efficacy','Loneliness','Emotion regulation','Attachment'];
+
+  function rowMatchesAppliedFilters(row){
+    const basicFacetMatch = Object.entries(appliedFacetState).every(([key, value]) => value === 'Any' || row.dataset[key] === value);
+    const ageMatch = !appliedAgeStages.size || ageStages.some(stage => appliedAgeStages.has(stage.value) && stage.bands.some(band => (row.dataset.age || '').split('|').includes(band)));
+    return basicFacetMatch && ageMatch;
+  }
+
+  function suggestionResultCount(term){
+    const q = (term || '').trim();
+    if(!q) return 0;
+    return rows.reduce((total,row) => {
+      if(!rowMatchesAppliedFilters(row)) return total;
+      const haystack = `${row.dataset.text || ''} ${row.innerText}`;
+      return total + (fuzzyTextMatch(q, haystack) ? 1 : 0);
+    },0);
+  }
+
+  function renderEmptySuggestions(){
+    if(!emptySuggestions) return;
+    const chip = label => `<button type="button" class="empty-search-chip" data-empty-search="${escapeAttr(label)}"><i class="ph-bold ph-magnifying-glass" aria-hidden="true"></i><span>${escapeHtml(label)}</span><span class="empty-search-count">${suggestionResultCount(label)}</span></button>`;
+    emptySuggestions.innerHTML = [...EMPTY_FEATURED_SEARCHES, ...EMPTY_OTHER_SEARCHES].slice(0,5).map(chip).join('');
+  }
+  renderEmptySuggestions();
+
+  empty?.addEventListener('click', e => {
+    const target = e.target.closest('[data-empty-search]');
+    if(!target) return;
+    const value = target.dataset.emptySearch || '';
+    commitSearch(value);
+  });
+
+  emptyReset?.addEventListener('click', () => {
+    Object.keys(facetState).forEach(key => facetState[key] = 'Any');
+    selectedAgeStages.clear();
+    appliedFacetState = { ...facetState };
+    appliedAgeStages = new Set();
+    renderFacetSections();
+    updateFilterCount();
+    apply();
+  });
+
+  function apply(resetPagination=true){
+    if(resetPagination) visibleLimit = PAGE_SIZE;
+    const raw = search.value.trim();
+    const active = committedQuery && raw === committedQuery ? (committedEffectiveQuery || committedQuery) : raw;
+    const q = active.toLowerCase();
+    const matchingRows = rows.filter(row=>{
+      const matchText = !q || fuzzyTextMatch(q, `${row.dataset.text || ''} ${row.innerText}`);
+      const matchFacet = rowMatchesAppliedFilters(row);
+      return matchText && matchFacet;
+    });
+    const sortedRows = [...matchingRows];
+    sortedRows.sort((a,b)=>{
+      if(sortValue === 'cited'){
+        const ac = Number(a.dataset.citations);
+        const bc = Number(b.dataset.citations);
+        const aHas = Number.isFinite(ac) && a.dataset.citations !== '';
+        const bHas = Number.isFinite(bc) && b.dataset.citations !== '';
+        if(aHas && bHas && bc !== ac) return bc - ac;
+        if(aHas !== bHas) return aHas ? -1 : 1;
+        return 0;
+      }
+      const ay = Number(a.querySelector('.date')?.textContent) || (sortValue === 'newest' ? -Infinity : Infinity);
+      const by = Number(b.querySelector('.date')?.textContent) || (sortValue === 'newest' ? -Infinity : Infinity);
+      return sortValue === 'oldest' ? ay - by : by - ay;
+    });
+
+    rows.forEach(row=>{ row.style.display='none'; });
+    sortedRows.forEach((row,index)=>{
+      row.style.display = index < visibleLimit ? 'grid' : 'none';
+      resultsMount.insertBefore(row, loadMoreWrap);
+    });
+
+    const totalMatches = sortedRows.length;
+    const hasMore = visibleLimit < totalMatches;
+    loadMoreWrap.classList.toggle('on', hasMore);
+    loadMoreBtn.hidden = !hasMore;
+
+    const hasActiveFilters = Object.values(appliedFacetState).some(value => value !== 'Any') || appliedAgeStages.size > 0;
+    const showResultStatus = !!committedQuery || hasActiveFilters;
+    resultStatus.classList.toggle('on', showResultStatus && totalMatches > 0);
+    count.innerHTML = committedQuery
+      ? `${totalMatches} result${totalMatches===1?'':'s'} for <strong>“${escapeHtml(committedQuery)}”</strong>`
+      : `${totalMatches} result${totalMatches===1?'':'s'}`;
+    searchClear.classList.toggle('on', !!q);
+    renderEmptySuggestions();
+    empty.style.display = totalMatches ? 'none' : 'block';
+    if(!totalMatches){
+      if(hasActiveFilters){
+        emptyHeadline.textContent = 'No measures match these filters.';
+        emptySub.textContent = committedQuery ? `Try changing the filters for “${committedQuery}” or reset them to see more measures.` : 'Try changing your filters or reset them to see more measures.';
+        emptySearchSuggestions.hidden = true;
+        emptyReset.hidden = false;
+      } else {
+        emptyHeadline.textContent = committedQuery ? `No measures found for “${committedQuery}”.` : 'No measures found.';
+        emptySub.innerHTML = 'Try a new search or explore one<br>of these related constructs.';
+        emptySearchSuggestions.hidden = false;
+        emptyReset.hidden = true;
+      }
+    }
+  }
+
+  loadMoreBtn?.addEventListener('click',()=>{
+    visibleLimit += PAGE_SIZE;
+    apply(false);
+  });
+
+  function commitSearch(value = search.value, explicitCorrection = null, correctionAccepted = false){
+    const clean = value.trim();
+    search.value = clean;
+    committedQuery = clean;
+    committedCorrection = correctionAccepted ? null : (explicitCorrection || correctedQuery(clean));
+    committedEffectiveQuery = clean;
+    if(clean) saveRecentSearch(clean);
+    apply();
+    updateSearchSummary();
+    closeSuggestions();
+    search.blur();
+  }
+
+
+  search.addEventListener('input', ()=>{
+    committedQuery=''; committedEffectiveQuery=''; committedCorrection=null; updateSearchSummary();
+    apply(); updateSuggestions();
+  });
+  search.addEventListener('focus', ()=>{searchShell.classList.add('search-active'); updateSuggestions(true);});
+  search.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      commitSearch();
+    }
+  });
+  search.addEventListener('blur', ()=>setTimeout(()=>{
+    if(!suggestions.matches(':hover')) closeSuggestions();
+    searchShell.classList.remove('search-active');
+  },120));
+
+  function escapeHtml(value){
+    return value.replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+
+  function highlightMatch(label, query){
+    if(!query) return `<span class="suggestion-label">${escapeHtml(label)}</span>`;
+    const lower = label.toLowerCase();
+    const i = lower.indexOf(query.toLowerCase());
+    if(i === -1) return `<span class="suggestion-label">${escapeHtml(label)}</span>`;
+    const before = escapeHtml(label.slice(0,i));
+    const match = escapeHtml(label.slice(i,i+query.length));
+    const after = escapeHtml(label.slice(i+query.length));
+    return `<span class="suggestion-label">${before}<span class="suggestion-match">${match}</span>${after}</span>`;
+  }
+
+  function rankItems(items, query, limit=4){
+    if(!query) return items.slice(0, limit);
+    return items
+      .map(item => ({...item, _score:fuzzyLabelScore(query,item.label)}))
+      .filter(item => item._score < 0.35)
+      .sort((a,b) => a._score-b._score || a.label.length-b.label.length)
+      .slice(0, limit);
+  }
+
+  function groupedSuggestions(query){
+    const constructs = suggestionPool.filter(item => item.type === 'construct');
+    const measures = suggestionPool.filter(item => item.type === 'measure');
+    const recent = getRecentSearches()
+      .slice(0,4)
+      .map(label => ({label, key: label.toLowerCase(), type:'recent'}));
+
+    if(!query){
+      return { correction:null, recent, constructs: [], measures: [] };
+    }
+
+    return {
+      correction:null,
+      recent,
+      constructs: rankItems(constructs, query, 4),
+      measures: rankItems(measures, query, 4)
+    };
+  }
+
+  function renderCorrection(correction){
+    if(!correction) return '';
+    let html=escapeHtml(correction.label);
+    correction.changedWords.forEach(({to}) => {
+      const re=new RegExp(`\\b${to.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`,'i');
+      html=html.replace(re, m => `<span class="suggestion-match">${m}</span>`);
+    });
+    return `
+      <div class="suggestion-group did-you-mean">
+        <div class="suggestion-group-title">Did you mean?</div>
+        <div class="suggestion-item active correction-item" data-query="${escapeHtml(correction.label)}" role="button" tabindex="0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"></path></svg>
+          <span class="suggestion-label">${html}</span>
+          <span class="suggestion-count">${suggestionResultCount(correction.label)}</span>
+        </div>
+      </div>`;
+  }
+
+  function renderGroup(title, items, raw, type, extraClass=''){
+    if(!items.length) return '';
+    return `
+      <div class="suggestion-group ${extraClass}">
+        <div class="suggestion-group-title">${title}</div>
+        ${items.map((item,index) => `
+          <div class="suggestion-item ${type === 'recent' ? 'recent-item' : ''}" data-query="${escapeHtml(item.label)}" role="button" tabindex="0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="10.75" cy="10.75" r="6.75"></circle><path d="M15.75 15.75 20 20"></path></svg>
+            ${highlightMatch(item.label, raw)}
+            <span class="suggestion-count">${suggestionResultCount(item.label)}</span>
+            ${type === 'recent' ? `<button class="recent-remove" type="button" aria-label="Remove ${escapeHtml(item.label)} from recent searches" data-remove="${escapeHtml(item.label)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 7l10 10M17 7 7 17"></path></svg></button>` : ''}
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function measureNaturalSuggestionsHeight(){
+    const previousHeight = suggestions.style.height;
+    const previousTransition = suggestions.style.transition;
+    suggestions.style.transition = 'none';
+    suggestions.style.height = 'auto';
+    const natural = suggestions.getBoundingClientRect().height;
+    suggestions.style.height = previousHeight;
+    suggestions.style.transition = previousTransition;
+    return natural;
+  }
+
+  function setSuggestionsOpen(open){
+    const isOpen = suggestions.classList.contains('on');
+    if(open){
+      const current = isOpen ? suggestions.getBoundingClientRect().height : 0;
+      if(!isOpen){
+        suggestions.style.height = '0px';
+        suggestions.classList.add('on');
+      } else {
+        suggestions.style.height = current + 'px';
+      }
+
+      const target = measureNaturalSuggestionsHeight();
+      // Force the browser to acknowledge the starting height before animating.
+      void suggestions.offsetHeight;
+      requestAnimationFrame(() => {
+        suggestions.style.height = target + 'px';
+      });
+    } else if(isOpen){
+      const current = suggestions.getBoundingClientRect().height;
+      suggestions.style.height = current + 'px';
+      void suggestions.offsetHeight;
+      requestAnimationFrame(() => { suggestions.style.height = '0px'; });
+      const done = (event) => {
+        if(event.propertyName !== 'height') return;
+        if(suggestions.style.height === '0px') suggestions.classList.remove('on');
+        suggestions.removeEventListener('transitionend', done);
+      };
+      suggestions.addEventListener('transitionend', done);
+    }
+  }
+
+  function closeSuggestions(){
+    setSuggestionsOpen(false);
+    suggestionsBackdrop.classList.remove('on');
+  }
+
+  function updateSuggestions(force=false){
+    const raw = search.value.trim();
+    const groups = groupedSuggestions(raw);
+    suggestionList.innerHTML =
+      renderGroup('Recent searches', groups.recent, raw, 'recent') +
+      renderGroup('Constructs', groups.constructs, raw, 'construct') +
+      renderGroup('Measures', groups.measures, raw, 'measure');
+
+    suggestionList.querySelectorAll('.suggestion-item').forEach(item => {
+      const run = () => commitSearch(item.dataset.query || '');
+      item.addEventListener('mousedown', e => {
+        if(e.target.closest('.recent-remove')) return;
+        e.preventDefault();
+        run();
+      });
+      item.addEventListener('keydown', e => {
+        if((e.key === 'Enter' || e.key === ' ') && !e.target.closest('.recent-remove')){
+          e.preventDefault();
+          run();
+        }
+      });
+    });
+
+    suggestionList.querySelectorAll('.recent-remove').forEach(button => {
+      button.addEventListener('mousedown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        removeRecentSearch(button.dataset.remove || '');
+        search.focus();
+      });
+    });
+
+    const hasMatches = groups.recent.length || groups.constructs.length || groups.measures.length;
+    const hasTypedQuery = !!raw;
+    const searchFocused = document.activeElement===search;
+    const showSuggestions = searchFocused && (hasTypedQuery ? hasMatches : groups.recent.length > 0);
+    setSuggestionsOpen(showSuggestions);
+    // Focus mode begins as soon as the search field is active, even before suggestions appear.
+    suggestionsBackdrop.classList.toggle('on', searchFocused);
+  }
+
+  function clearSearch(){
+    search.value = '';
+    committedQuery = '';
+    committedEffectiveQuery = '';
+    committedCorrection = null;
+    updateSearchSummary();
+    apply();
+    updateSuggestions(true);
+    search.focus();
+  }
+
+  document.querySelector('.search-icon').addEventListener('click', ()=>commitSearch());
+  searchClear.addEventListener('click', clearSearch);
+  sortSegments.forEach(button => {
+    button.addEventListener('click', () => {
+      sortValue = button.dataset.sort || 'newest';
+      sortSegments.forEach(item => {
+        const active = item.dataset.sort === sortValue;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      updateSortIndicator(true);
+      apply();
+    });
+  });
+
+  suggestionsBackdrop.addEventListener('mousedown', e => {
+    e.preventDefault();
+    closeSuggestions();
+    search.blur();
+    searchShell.classList.remove('search-active');
+  });
+
+
+  function activeFilterCount(){
+    const facetCount = Object.values(appliedFacetState).filter(value => value !== 'Any').length;
+    return facetCount + appliedAgeStages.size;
+  }
+
+  function updateFilterCount(){
+    const badge = document.getElementById('filterCount');
+    if(!badge) return;
+    const n = activeFilterCount();
+    badge.textContent = n;
+    badge.classList.toggle('on', n > 0);
+    badge.setAttribute('aria-label', `${n} active filter${n === 1 ? '' : 's'}`);
+  }
+
+  const filterBtn = document.getElementById('filterBtn');
+  function openDrawer(){
+    drawer.classList.add('on');
+    document.body.classList.add('filters-open');
+    drawer.setAttribute('aria-hidden','false');
+    filterBtn.setAttribute('aria-expanded','true');
+  }
+  function closeDrawer(){
+    drawer.classList.remove('on');
+    document.body.classList.remove('filters-open');
+    drawer.setAttribute('aria-hidden','true');
+    filterBtn.setAttribute('aria-expanded','false');
+  }
+  filterBtn.addEventListener('click',()=>drawer.classList.contains('on') ? closeDrawer() : openDrawer());
+  updateFilterCount();
+  document.getElementById('applyFilters').addEventListener('click',()=>{appliedFacetState = { ...facetState }; appliedAgeStages = new Set(selectedAgeStages); updateFilterCount(); apply(); closeDrawer()});
+  document.getElementById('resetFilters').addEventListener('click',()=>{Object.keys(facetState).forEach(key => facetState[key] = 'Any'); selectedAgeStages.clear(); appliedFacetState = { ...facetState }; appliedAgeStages = new Set(); renderFacetSections(); updateFilterCount(); apply();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeSuggestions();search.blur();searchShell.classList.remove('search-active');}});
+
+  // Initialize count, sort order, and facet state after all rows are rendered.
+  requestAnimationFrame(()=>updateSortIndicator(false));
+  window.addEventListener('resize',()=>{ updateSortIndicator(false); });
+  apply();
+</script>
+
+</body>
+</html>
