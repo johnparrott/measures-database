@@ -2513,6 +2513,55 @@ window.MEASURES = [
       }) || null;
   }
 
+  function forceMeaningDemoResults() {
+    const allRows = [...document.querySelectorAll(".result")];
+    const meaningRows = allRows.filter(row =>
+      norm(row.dataset.construct) === "meaning in life"
+    );
+
+    if (!meaningRows.length) return;
+
+    // Hide every result, then reveal the three genuine "Meaning in life"
+    // measures already present in the site's dataset.
+    allRows.forEach(row => { row.style.display = "none"; });
+
+    const preferredOrder = [
+      "meaning in life questionnaire",
+      "purpose in life test",
+      "personal meaning profile"
+    ];
+
+    const ordered = preferredOrder
+      .map(name => meaningRows.find(row =>
+        norm(row.querySelector(".measure-title")?.textContent).includes(name)
+      ))
+      .filter(Boolean);
+
+    const remaining = meaningRows.filter(row => !ordered.includes(row));
+    const finalRows = [...ordered, ...remaining].slice(0, 3);
+
+    const mount = document.querySelector(".results");
+    const loadMoreWrap = document.querySelector(".load-more-wrap");
+
+    finalRows.forEach(row => {
+      row.style.display = "grid";
+      if (mount && loadMoreWrap) mount.insertBefore(row, loadMoreWrap);
+    });
+
+    if (loadMoreWrap) loadMoreWrap.classList.remove("on");
+
+    const count = document.querySelector(".result-count");
+    if (count) {
+      count.innerHTML = `${finalRows.length} results for <strong>“meaning”</strong>`;
+    }
+
+    const status = document.querySelector(".result-status");
+    if (status) status.classList.add("on");
+
+    const empty = document.querySelector(".empty");
+    if (empty) empty.style.display = "none";
+  }
+
   async function scrollDetail() {
     const detail = document.querySelector(".detail-view");
     if (!detail) return;
@@ -2621,18 +2670,10 @@ window.MEASURES = [
 
     let mlq = findMLQ();
 
-    // Ensure the viewer can see several matching results before focusing on MLQ.
-    for (let i = 0; i < 3; i++) {
-      const visibleResults = [...document.querySelectorAll(".result")]
-        .filter(row => getComputedStyle(row).display !== "none");
-      if (visibleResults.length >= 3) break;
-
-      const loadMore = document.querySelector(".load-more-wrap.on .load-more-btn:not([hidden])");
-      if (!loadMore) break;
-
-      loadMore.click();
-      await sleep(350);
-    }
+    // Demo-only: reveal the three real Meaning in life measures together,
+    // regardless of the active filter combination.
+    forceMeaningDemoResults();
+    await sleep(350);
 
     if (!mlq) {
       search.focus();
