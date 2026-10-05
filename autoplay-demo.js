@@ -155,7 +155,7 @@
       input.dispatchEvent(new Event("input", { bubbles: true }));
       await sleep(125 + Math.random() * 80);
     }
-    await sleep(850);
+    await sleep(1500);
   }
 
   async function enter(input) {
@@ -163,7 +163,7 @@
       key: "Enter", code: "Enter", keyCode: 13, which: 13,
       bubbles: true, cancelable: true
     }));
-    await sleep(900);
+    await sleep(1800);
   }
 
   function findCorrection() {
@@ -239,7 +239,13 @@
     const apply =
       document.getElementById("applyFilters") ||
       byText(".filter-footer button,button", ["Apply filters", "Apply"]);
-    await click(apply, 900);
+
+    // Apply the selected filters without an extra visible cursor gesture.
+    // This keeps the demonstration focused on toggling the filters themselves.
+    if (apply) {
+      apply.click();
+      await sleep(900);
+    }
 
     const search =
       document.querySelector(".search-input") ||
@@ -249,9 +255,9 @@
     await typeHuman(search, "meanig");
     await enter(search);
 
-    await sleep(450);
-    const correction = findCorrection();
-    if (correction) await click(correction, 900);
+    // Let the misspelled search and fuzzy results remain visible long enough
+    // for the viewer to understand what just happened.
+    await sleep(2200);
 
     let mlq = findMLQ();
 
@@ -266,6 +272,8 @@
 
     if (!mlq) throw new Error("Meaning in Life Questionnaire result not found.");
 
+    // Give the result screen a beat before choosing the questionnaire.
+    await sleep(1400);
     await click(mlq.closest("a,button,.measure-title-link") || mlq, 1150);
 
     await cursorOffscreen();
