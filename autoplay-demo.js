@@ -148,21 +148,38 @@
     return allowFallback ? (choices[0] || null) : null;
   }
 
-  async function scrollDrawerTo(el) {
+  async function revealInDrawer(el, align = "center") {
     const drawer = document.querySelector(".drawer");
     if (!drawer || !el) return;
 
-    const targetTop = Math.max(
-      0,
-      el.offsetTop - drawer.clientHeight + el.offsetHeight + 28
-    );
+    const drawerRect = drawer.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
 
-    drawer.scrollTo({
-      top: targetTop,
-      behavior: "smooth"
-    });
+    let delta = 0;
+    if (align === "bottom") {
+      delta = elRect.bottom - (drawerRect.bottom - 30);
+    } else {
+      const drawerCenter = drawerRect.top + drawerRect.height / 2;
+      const elCenter = elRect.top + elRect.height / 2;
+      delta = elCenter - drawerCenter;
+    }
 
-    await sleep(950);
+    if (Math.abs(delta) > 8) {
+      drawer.scrollTo({
+        top: Math.max(0, drawer.scrollTop + delta),
+        behavior: "smooth"
+      });
+      await sleep(900);
+    }
+  }
+
+  async function clickDrawerChip(sectionTitle, labels) {
+    // The site's filter renderer rebuilds its chip DOM after every selection,
+    // so always resolve a fresh element immediately before interacting with it.
+    const target = chip(sectionTitle, labels);
+    if (!target) return false;
+    await revealInDrawer(target, "center");
+    return click(target, 560);
   }
 
   async function typeHuman(input, text) {
@@ -248,25 +265,22 @@
       byText("button", "filter");
     await click(filterButton, 760);
 
-    const filters = [
-      chip("Population", ["Adult", "Adults"]),
-      chip("Length", ["Under 15", "Short", "Brief"]),
-      chip("Language", ["English"])
-    ].filter(Boolean);
+    // Select the intended filters one at a time. Each click causes the site's
+    // own filter UI to re-render, so the next control is found fresh.
+    await clickDrawerChip("Population", ["General"]);
+    await clickDrawerChip("Number of Items", ["1–10 items"]);
+    await clickDrawerChip("Language", ["English"]);
 
-    for (const filter of [...new Set(filters)]) {
-      await click(filter, 520);
-    }
-
+    // Now scroll the real drawer all the way down until the actual Apply button
+    // is comfortably visible, then click it.
     const apply =
       document.getElementById("applyFilters") ||
       byText(".filter-footer button,button", ["Apply filters", "Apply"]);
 
-    // Scroll the real filter drawer so the Apply button is visibly revealed,
-    // then click it with the fake cursor.
     if (apply) {
-      await scrollDrawerTo(apply);
-      await click(apply, 900);
+      await revealInDrawer(apply, "bottom");
+      await sleep(450);
+      await click(apply, 1000);
     }
 
     const search =
